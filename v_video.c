@@ -148,8 +148,6 @@ V_MarkRect
 { 
     M_AddToBox (dirtybox, x, y); 
     M_AddToBox (dirtybox, x+width-1, y+height-1); 
-    printf("M_AddToBox (dirtybox, x=%d, y=%d)\n",x, y);
-    printf("M_AddToBox (dirtybox, x=%d, y=%d)\n",x+width-1,y+height-1);
 } 
  
 

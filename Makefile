@@ -6,9 +6,9 @@
 #
 CC=  gcc  # gcc or g++
 
-CFLAGS=-g -Wall -DNORMALUNIX -DXENIX # -DUSEASM 
+CFLAGS=-g -Wall -DNORMALUNIX -DXENIX #-DDISABLEGRAPHICS
 LDFLAGS=-L/usr/lib/386
-LIBS=-lccgi -ltermlib -ltcap -lcurses 
+LIBS=-lccgi -ltermlib -ltcap -lcurses -levent
 
 # subdirectory for objects
 O=xenix

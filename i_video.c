@@ -48,7 +48,16 @@ int XShmGetEventBase( Display* dpy ); /* problems with g++?*/
 #define POINTER_WARP_COUNTDOWN	1
 
 #include <stdio.h>
-#include <signal.h>
+#include <errno.h>
+#include <sys/param.h>
+#include <sys/fcntl.h>
+#include <sys/sysmacros.h>
+#include <sys/page.h>
+#include <sys/event.h>
+#include <mouse.h>
+#include <sys/vtkd.h>
+#include <sys/errno.h>
+
 
 short devhandle,savin[20],savary[66];
 #define DISABLE_RENDER 1
@@ -58,10 +67,6 @@ short devhandle,savin[20],savary[66];
 #define  LEFT   0
 #define  CENTER 1
 
-void box(short x, short y, short w, short h);
-void report_error(char func[], short mode);
-void fatal(short errnum, char func[]);
-void waitcr();
 
 /* SCO CGI functions, no header file for them :| */
 short v_opnwk(short work_in[],short *dev_handle, short work_out[]);
@@ -84,6 +89,9 @@ short vb_pixels(short dev_handle,short origin[],short width,short height,
 short vs_color(short dev_handle,short ind_in,short rgb_in[],short rgb_out[]);
 
 
+int event_queueFD;
+char *ttyn;
+
 
 #ifndef __M_XENIX
 /* Blocky mode,*/
@@ -98,9 +106,21 @@ static int	multiply=1;
 
 void I_ShutdownGraphics(void)
 {
+	int consoleFD;
 	printf("I_ShutdownGraphics\n");
-
+	/* close event queue if still open */
+	if (fcntl(event_queueFD, F_GETFL) != -1 || errno != EBADF) {
+		printf("I_ShutdownGraphics - Closing event queue\n");
+		ev_close();
+	}
+	
+	/* restore tty mode */
+	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
+	ioctl(consoleFD, KDSKBMODE, K_XLATE);
+	close(consoleFD);          
+#ifndef DISABLEGRAPHICS
 	v_clswk( devhandle );
+#endif
 }
 
 
@@ -143,8 +163,125 @@ void I_StartFrame (void)
 
 void I_GetEvent(void)
 {
+	EVENT *evp;
+	event_t event;	
+	int scancode = 0;
+	int is_release = 0;
+	int key;
+	
+	/* read from event stream */
+	evp = ev_read();
+	if (evp==NULL) 
+		return;
 
-
+#ifdef DISABLEGRAPHICS 	
+	printf("I_GetEvent - evp is not null\n");
+#endif	
+	
+	
+	if (EV_TAG(*evp) & T_STRING)
+		scancode = EV_BUF(*evp)[0];	
+	ev_pop();
+	
+	/*return if we did not read a scancode*/
+	if (scancode==0)
+		return;
+#ifdef DISABLEGRAPHICS 			
+	printf("scancode: %x\n",scancode);
+#endif	
+	switch (scancode) {
+		case 0xe0: /* need to read another character to know the key*/
+					
+				  	evp = ev_read();
+			    	if (evp==NULL)
+						return;
+					scancode=0;
+					if (EV_TAG(*evp) & T_STRING)
+						scancode = EV_BUF(*evp)[0];	
+					ev_pop();
+					if (scancode==0)
+						return;
+#ifdef DISABLEGRAPHICS 							
+					printf("2nd scancode: %x\n",scancode);
+#endif					
+					switch (scancode){
+						case 0xc8: is_release=1;
+						case 0x48: key = KEY_UPARROW; break;
+						case 0xd0: is_release=1;
+						case 0x50: key = KEY_DOWNARROW; break;
+						case 0xcd: is_release=1;
+						case 0x4d: key = KEY_RIGHTARROW; break;
+						case 0xcb: is_release=1;
+						case 0x4b: key = KEY_LEFTARROW; break;
+						case 0xb8: is_release=1;
+						case 0x38: key = KEY_RALT; break;
+#ifdef DISABLEGRAPHICS 						
+						/* if graphics are disabled, DEL quits the app */
+						case 0x53: I_ShutdownGraphics(); 
+								   exit(0); 
+#endif						
+					}
+					break;
+		case 0x9d: is_release=1;
+		case 0x1d: key = KEY_RCTRL; break; /* this is really left CTRL */
+		/*TODO: my mac doesn't have a right ctrl lol */
+		case 0xb9: is_release=1;
+		case 0x39: key = ' '; break;
+		case 0x9c: is_release=1;
+		case 0x1c: key = KEY_ENTER; break;
+		case 0x81: is_release=1;
+		case 0x01: key = KEY_ESCAPE; break;
+		case 0x95:  is_release=1;
+		case 0x15: key = 'Y'; break;
+		case 0xB1: is_release=1;
+		case 0x31: key = 'N'; break;
+	}
+	
+	if (is_release)
+		event.type = ev_keyup;
+	else event.type = ev_keydown;
+	event.data1 = key;
+#ifdef DISABLEGRAPHICS 						
+	printf("Posting keycode %d with type %d\n",key,event.type);
+#endif		
+	D_PostEvent(&event);
+	/* notes: 
+	   some scancodes start with e0
+	   key		press	release
+	   UP:		e0 48	e0 c8
+	   DOWN:	e0 50	e0 d0
+	   RIGHT:	e0 4d	e0 cd
+	   LEFT:	e0 4b	e0 cb
+	   RALT:	e0 38	e0 b8	   
+	   SPACE:	   39	   b9
+	   LCTRL:	   1d	   9d
+	   RSHIFT:	   2a	   aa
+	   LSHIFT:	   36	   
+	   1:		    2	   82
+	   2:			3	   83
+	   ...
+	   7:			8	   88
+	   0:			b
+   	   -:		    c
+   	   +:	shit it uses a modifier... see below key for =
+   	   =:			d
+	   ESC:			1
+	   ENTER:	   1c
+	   TAB:			f
+   	   F1:		   3b
+   	   F2:		   3c
+   	   ...
+   	   F10:		   44
+   	   F:		   21
+   	   M:		   32
+   	   C:		   2e
+   	   
+   	   to implement the three QWERTY rows:
+   	   Q:		   10
+   	   A:		   1e
+   	   Z:		   2c
+	*/
+	
 }
 
 
@@ -152,48 +289,11 @@ void I_GetEvent(void)
 /* I_StartTic*/
 /**/
 
-void SendKeypress(int key) {
-	event_t ev;
-	ev.type = ev_keydown;
-	ev.data1 = key;
-	D_PostEvent(&ev);
-	ev.type = ev_keyup;
-	D_PostEvent(&ev);
-}
-
 void I_StartTic (void)
 {
-	short ktype,direction;
-	char key;
-	event_t ev;
-	
-	ktype = vrd_curkeys(devhandle,2,&direction,&key);
-	if (ktype>0) {
-		if (ktype==1) {
-			ev.type = ev_keydown;
-			switch (direction){
-				case 8:
-					ev.data1=KEY_UPARROW;
-					break;
-				case 2:
-					ev.data1=KEY_DOWNARROW;
-					break;
-				case 4:
-					ev.data1=KEY_LEFTARROW;
-					break;				
-				case 6:
-					ev.data1=KEY_RIGHTARROW;			
-			}	
-			/*D_PostEvent(&ev);*/
-			SendKeypress(ev.data1);
-		}
-	}
-	else {
-		ev.type=ev_keydown;
-		ev.data1=KEY_ENTER;
-		SendKeypress(ev.data1);
-		
-	}
+	/*
+	I_GetEvent();
+	*/
 }
 
 /**/
@@ -227,6 +327,7 @@ void I_UpdateNoBlit (void)
 /**/
 void I_FinishUpdate (void)
 {
+#ifndef DISABLEGRAPHICS
 	short origin[2], valid_width[2], valid_height[2];
 	int i, outline;
 	char pixels[64000];
@@ -244,7 +345,8 @@ void I_FinishUpdate (void)
 	}
 
 	vb_pixels(devhandle,origin,320,200,valid_width,valid_height,pixels);
-	
+#endif
+	I_GetEvent();
 }
 
 
@@ -265,6 +367,7 @@ void I_ReadScreen (byte* scr)
 
 void I_SetPalette (byte* palette)
 {
+#ifndef DISABLEGRAPHICS
 	register short c;
 	register int i;
 	short intin[3],intout[3];
@@ -288,14 +391,15 @@ void I_SetPalette (byte* palette)
        UNUSED: for no apparent reason it BREAKS AFTER 150
        and has bugs earlier before that too */
 	/*vsc_table(devhandle,0,127,colors);  */
-
+#endif
 }
 
 
 
 void I_InitGraphics(void)
 {
-	
+	int consoleFD;
+	dmask_t omask, dmask = D_STRING;
 	short error;
 	if (getenv("CGIDISP") == NULL) {
     	printf("No CGIDISP env variable found\n");
@@ -305,7 +409,7 @@ void I_InitGraphics(void)
     	printf("export CGIPATH CGIDISP\n");
     	exit(1);
     }
-	
+#ifndef DISABLEGRAPHICS
 	/* initialize i/o for newframe prompt*/
 	signal( SIGHUP, sig_handle );
 	signal( SIGINT, sig_handle );
@@ -342,14 +446,38 @@ void I_InitGraphics(void)
 
 	/* open the workstation and save output in savary array */
 	error = v_opnwk(savin, &devhandle, savary);
-	if (error < 0)
-	{
+	if (error < 0) {
 		printf("Cgitest Error %d opening device display\n",vq_error());
-	printf("Check the environment variables: CGIPATH and CGIDISP.\n" );
+		printf("Check the environment variables: CGIPATH and CGIDISP.\n" );
 		exit (-1);
 	}
+	
+#endif
     
-
+	/* set tty to RAW mode to get scancodes */
+	ttyn = (char *) ttyname(0);
+	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
+	ioctl(consoleFD, KDSKBMODE, K_RAW);
+	close(consoleFD);    
+    
+    
+    /* Initialize the event queue */
+	if (event_queueFD = ev_init() < 0) {
+		printf("initialization of event queue failed (result=%d)\n",event_queueFD);
+		printf("(did you run mkdev mouse?)\n");
+		I_ShutdownGraphics();
+		exit(1);
+	}
+    omask=dmask;
+    if ((event_queueFD = ev_open(&dmask)) < 0) {
+	    printf("open of mouse and keyboard devices failed (result=%d)\n",event_queueFD);                
+        I_ShutdownGraphics();
+        exit(1);
+    }
+   
+#ifdef DISABLEGRAPHICS 	
+	printf("I_InitGraphics finished\n");
+#endif
 }
 
 
@@ -361,94 +489,5 @@ void InitExpand (void)
 
 void InitExpand2 (void)
 {
-}
-
-
-void report_error(char func[], short mode)
-{
-	short errnum, err_ptsin[2];
-	char   blanks[80], err_cstrng[80];
-	short  i;
-
-	/* initialize output strings */
-	for (i=0; i<79; i++) blanks[i] = ' ';
-	blanks[79] = '\000';
-	errnum = -(vq_error());
-	sprintf (err_cstrng,
-		"Error no. %d in CGI function %s.  Tap `RETURN' to continue...",
-		(short)errnum, func);
-
-	switch (mode) {
-		case GMODE:
-			if (savin[10] && savary[45] == 0) { 
-
-				short attribs[10], horiz, vert;
-
-				/* save current attributes; set alignment to {center,bottom} */
-				if (vqt_attributes(devhandle, attribs) < 0 ||
-					 vst_alignment(devhandle,CENTER,BOTTOM,&horiz,&vert) < 0)
-					fatal(errnum,func);
-
-				/* fill the message area with blanks, then write the prompt */
-				if (v_gtext (devhandle, 16384, 31600, blanks) < 0 ||
-					 v_gtext (devhandle, 16384, 31600, err_cstrng) < 0)
-					fatal(errnum,func);
-
-				/* wait for string input */
-				err_ptsin[0] = 0;
-				err_ptsin[1] = 0;
-				if (vrq_string(devhandle, 80, 0, err_ptsin, err_cstrng) < 0)
-					fatal(errnum,func);
-
-				/* reinstate alignment */
-				if (vst_alignment(devhandle,attribs[3],attribs[4],&horiz,&vert) < 0)
-					fatal(errnum,func);
-			}
-		break;
-		case CMODE: {
-			short row, column;
-
-			/* save current cursor position */
-			if (vq_curaddress(devhandle, &row, &column) < 0) 
-				fatal(errnum,func);
-
-			/* move cursor to position (2,0) */
-			if (vs_curaddress(devhandle, 2, 0) < 0)
-				fatal(errnum,func);
-
-			/* fill message area with blanks & overwrite error message */
-			if (v_curtext(devhandle, blanks) < 0 ||
-				 vs_curaddress(devhandle, 2, 0) < 0 ||
-				 v_curtext(devhandle, err_cstrng) < 0)
-				fatal(errnum,func);
-
-			/* wait for string input */
-			err_ptsin[0] = 0;
-			err_ptsin[1] = 0;
-			if (vrq_string(devhandle, 80, 0, err_ptsin, err_cstrng) < 0)
-				fatal(errnum,func);
-
-			/* restore cursor position */
-			if (vs_curaddress(devhandle, row, column) < 0)
-				fatal(errnum,func);
-		}
-	}
-}
-
-
-
-void fatal(short errnum, char func[])
-{
-	/* close the workstation */
-	v_clswk(devhandle);           /* no recourse on error */
-
-	/* now reopen and reclose it to leave it in default state */
-	v_opnwk(savin, &devhandle, savary);
-	v_enter_cur(devhandle);       /* (make sure we exit in cursor mode) */
-	v_clswk(devhandle);
-
-	/* write fatal message (using stdio) and bug out */
-	printf ("Fatal error no. %d in CGI function %s.\n", (int)errnum, func);
-	exit (-2);
 }
 
