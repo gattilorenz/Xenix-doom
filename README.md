@@ -16,10 +16,8 @@ The CGI library is pretty slow and half-broken; the I_SetPalette call in particu
 is *very* slow because each color is set individually, due to a bug in the vsc_table
 function.
 
-#TODO: 
+# TODO: 
 - The status bar/HUD is partially black (?)
 - Implement I_UpdateNoBlit for faster refresh (but DOOM linux code always redraws whole scene...)
 - Use a loop in I_GetEvent to consume all events in the queue?
-
-
-
+- Use direct VGA access, expecially to change the palette in one go (see https://www.tuhs.org/Usenet/comp.unix.xenix.sco/1991-February/000624.html )
