@@ -91,6 +91,9 @@ int event_queueFD;
 char *ttyn;
 
 
+void initkeyhandler();
+int read_scancode();
+char oldkeystate[128];
 
 
 
@@ -116,26 +119,26 @@ void I_ShutdownGraphics(void)
 
 void sig_handle(sig) {
 	switch (sig) {
-		case 1: printf("Caught SIGHUP: hangup\n"); break;
-		case 2: printf("Caught SIGINT: interrupt (rubout)\n"); break;
-		case 3: printf("Caught SIGQUIT: quit (ASCII FS)\n"); break;
-		case 4: printf("Caught SIGILL: illegal instruction\n"); break;
-		case 5: printf("Caught SIGTRAP: trace trap\n"); break;
-		case 6: printf("Caught SIGIOT (or SIGABRT): IOT instruction\n"); break;
-		case 7: printf("Caught SIGEMT: EMT instruction\n"); break;
-		case 8: printf("Caught SIGFPE: floating point exception\n"); break;
-		case 10: printf("Caught SIGBUS: bus error\n"); break;
-		case 11: printf("Caught SIGSEGV: segmentation violation\n"); break;
-		case 12: printf("Caught SIGSYS: bad argument to system call\n"); break;
-		case 13: printf("Caught SIGPIPE: write on a pipe with no one to read it\n"); break;
-		case 14: printf("Caught SIGALRM: alarm clock\n"); break;
-		case 15: printf("Caught SIGTERM: software termination signal from kill\n"); break;
-		case 16: printf("Caught SIGUSR1: user defined signal 1\n"); break;
-		case 17: printf("Caught SIGUSR2: user defined signal 2\n"); break;
-		case 18: printf("Caught SIGCLD: death of a child\n"); break;
-		case 19: printf("Caught SIGPWR: power-fail restart\n"); break;
+		case SIGHUP: printf("Caught SIGHUP: hangup\n"); break;
+		case SIGINT: printf("Caught SIGINT: interrupt (rubout)\n"); break;
+		case SIGQUIT: printf("Caught SIGQUIT: quit (ASCII FS)\n"); break;
+		case SIGILL: printf("Caught SIGILL: illegal instruction\n"); break;
+		case SIGTRAP: printf("Caught SIGTRAP: trace trap\n"); break;
+		case SIGIOT: printf("Caught SIGIOT (or SIGABRT): IOT instruction\n"); break;
+		case SIGEMT: printf("Caught SIGEMT: EMT instruction\n"); break;
+		case SIGFPE: printf("Caught SIGFPE: floating point exception\n"); break;
+		case SIGBUS: printf("Caught SIGBUS: bus error\n"); break;
+		case SIGSEGV: printf("Caught SIGSEGV: segmentation violation\n"); break;
+		case SIGSYS: printf("Caught SIGSYS: bad argument to system call\n"); break;
+		case SIGPIPE: printf("Caught SIGPIPE: write on a pipe with no one to read it\n"); break;
+		case SIGALRM: printf("Caught SIGALRM: alarm clock\n"); break;
+		case SIGTERM: printf("Caught SIGTERM: software termination signal from kill\n"); break;
+		case SIGUSR1: printf("Caught SIGUSR1: user defined signal 1\n"); break;
+		case SIGUSR2: printf("Caught SIGUSR2: user defined signal 2\n"); break;
+		case SIGCLD: printf("Caught SIGCLD: death of a child\n"); break;
+		case SIGPWR: printf("Caught SIGPWR: power-fail restart\n"); break;
 		default:
-			printf("%d signal caught, application terminated.\n", sig);
+			printf("signal %d caught, application terminated.\n", sig);
 	}
 	I_ShutdownGraphics();
 	exit( sig );
@@ -151,88 +154,79 @@ void I_StartFrame (void)
 }
 
 
-void I_GetEvent(void)
-{
-	EVENT *evp;
-	event_t event;	
-	int scancode = 0;
-	int is_release = 0;
-	int key;
-	
-	/* read from event stream */
-	evp = ev_read();
-	if (evp==NULL) 
-		return;
 
-#ifdef DISABLEGRAPHICS 	
-	printf("I_GetEvent - evp is not null\n");
-#endif	
-	
-	
+void initkeyhandler()
+{
+	int i;
+	for (i=0;i<128;i++) 
+		oldkeystate[i]=0;
+}
+
+int read_scancode() {
+	int scancode = 0;
+	EVENT *evp;	
+	/* read scancode from event queue */
+  	evp = ev_read();
+   	if (evp==NULL)
+		return 0;
+	/* check that it's a Keyboard event */
 	if (EV_TAG(*evp) & T_STRING)
 		scancode = EV_BUF(*evp)[0];	
-	ev_pop();
+	/* remove it from queue */
+	ev_pop();	
+	return scancode;
+}
+
+
+byte ASCIINames[128] =	
+					{
+/*	 0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
+ 	 0  ,27 ,'1','2','3','4','5','6','7','8','9','0','-','=',8  ,9  ,		 /* 0 */
+	'q','w','e','r','t','y','u','i','o','p','[',']',13 ,(0x80+0x1d),'a','s',	 /* 1 */
+	'd','f','g','h','j','k','l',';',39 ,'`',(0x80+0x36),92 ,'z','x','c','v', /* 2 */
+	'b','n','m',',','.','/',0  ,'*',(0x80+0x38),' ',0  ,(0x80+0x3b),(0x80+0x3c),(0x80+0x3d),(0x80+0x3e),(0x80+0x3f),	 /* 3 */
+	(0x80+0x40),(0x80+0x41),(0x80+0x42),(0x80+0x43),(0x80+0x44),(0x80+0x57),(0x80+0x58),'7',0xad,'9',0x2d,0xac,'5',0xae,'+','1',		 /* 4 */
+	0xaf,'3','0',127,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,		 /* 5 */
+	0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,		 /* 6 */
+	0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0  ,0			 /* 7 */
+					};
+
+void I_GetEvent(void)
+{
+	event_t event;	
+	int scancode = 0;
 	
-	/*return if we did not read a scancode*/
+	scancode = read_scancode();
+
+	if (scancode == 0xe0 || scancode == 0xe1) 	/* need to read another character to know the key*/
+		scancode = read_scancode();
+
 	if (scancode==0)
-		return;
-#ifdef DISABLEGRAPHICS 			
-	printf("scancode: %x\n",scancode);
-#endif	
-	switch (scancode) {
-		case 0xe0: /* need to read another character to know the key*/
-					
-				  	evp = ev_read();
-			    	if (evp==NULL)
-						return;
-					scancode=0;
-					if (EV_TAG(*evp) & T_STRING)
-						scancode = EV_BUF(*evp)[0];	
-					ev_pop();
-					if (scancode==0)
-						return;
-#ifdef DISABLEGRAPHICS 							
-					printf("2nd scancode: %x\n",scancode);
-#endif					
-					switch (scancode){
-						case 0xc8: is_release=1;
-						case 0x48: key = KEY_UPARROW; break;
-						case 0xd0: is_release=1;
-						case 0x50: key = KEY_DOWNARROW; break;
-						case 0xcd: is_release=1;
-						case 0x4d: key = KEY_RIGHTARROW; break;
-						case 0xcb: is_release=1;
-						case 0x4b: key = KEY_LEFTARROW; break;
-						case 0xb8: is_release=1;
-						case 0x38: key = KEY_RALT; break;
-/*#ifdef DISABLEGRAPHICS */
-						/* if graphics are disabled, DEL quits the app */
-						case 0x53: I_ShutdownGraphics(); 
-								   exit(0); 
-/*#endif */
-					}
-					break;
-		case 0x9d: is_release=1;
-		case 0x1d: key = KEY_RCTRL; break; /* this is really left CTRL */
-		/*TODO: my mac doesn't have a right ctrl lol */
-		case 0xb9: is_release=1;
-		case 0x39: key = ' '; break;
-		case 0x9c: is_release=1;
-		case 0x1c: key = KEY_ENTER; break;
-		case 0x81: is_release=1;
-		case 0x01: key = KEY_ESCAPE; break;
-		case 0x95: is_release=1;
-		case 0x15: key = 'y'; break;
-		case 0xB1: is_release=1;
-		case 0x31: key = 'n'; break;
-	}
+		return;	
+		
+	if (scancode == 0x53) /* quit with DEL */
+		raise(SIGINT);
 	
-	if (is_release)
+	if (scancode > 0x7f) {
 		event.type = ev_keyup;
-	else event.type = ev_keydown;
-	event.data1 = key;
+		scancode -= 0x80;
+		oldkeystate[scancode] = 0;
+	}
+	else {
+		event.type = ev_keydown;
+		/* stop key repeat */
+		if (oldkeystate[scancode] == 1)
+			return;
+		oldkeystate[scancode] = 1;
+	}
+		
+	if (ASCIINames[scancode]!=0)
+		 event.data1 = ASCIINames[scancode];
+	else event.data1 = scancode;
+	
+	
 #ifdef DISABLEGRAPHICS 						
-	printf("Posting keycode %d with type %d\n",key,event.type);
+	printf("Posting keycode %d with type %d\n",event.data1,event.type);
 #endif		
 	D_PostEvent(&event);
 	/* notes: 
@@ -281,9 +275,7 @@ void I_GetEvent(void)
 
 void I_StartTic (void)
 {
-	/*
 	I_GetEvent();
-	*/
 }
 
 /**/
@@ -468,6 +460,7 @@ void I_InitGraphics(void)
 	
 #endif
     
+    initkeyhandler();
    
 #ifdef DISABLEGRAPHICS 	
 	printf("I_InitGraphics finished\n");

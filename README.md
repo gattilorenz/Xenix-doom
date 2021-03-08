@@ -11,8 +11,6 @@ mouse (with mkdev mouse, I chose the keyboard mouse and activated it on tty1a).
 
 TODO: 
 - The status bar/HUD is partially black (?)
-- Key repeat is not handled and makes the game vaguely unplayable
 - Implement I_UpdateNoBlit for faster refresh
-- Use a loop in I_GetEvent to consume all events in the queue
-- Handle all keyboard input
+- Use a loop in I_GetEvent to consume all events in the queue?
 - Quitting kills the shell?
