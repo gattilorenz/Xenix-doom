@@ -9,7 +9,13 @@ graphics libraries.
 Make sure to set the CGIDISP and CGIPATH environment variables, and to initialize the 
 mouse (with mkdev mouse, I chose the keyboard mouse and activated it on tty1a).
 
+If installed on a real machine, you probably need a 1Ghz+ CPU to have a playable game.
+The CGI library is pretty slow and half-broken; the I_SetPalette call in particular 
+is *very* slow because each color is set individually, due to a bug in the vsc_table
+function.
+
 TODO: 
 - The status bar/HUD is partially black (?)
-- Implement I_UpdateNoBlit for faster refresh
+- Implement I_UpdateNoBlit for faster refresh (but DOOM linux code always redraws whole scene...)
 - Use a loop in I_GetEvent to consume all events in the queue?
+
