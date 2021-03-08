@@ -45,8 +45,6 @@ int XShmGetEventBase( Display* dpy ); /* problems with g++?*/
 
 #include "doomdef.h"
 
-#define POINTER_WARP_COUNTDOWN	1
-
 #include <stdio.h>
 #include <errno.h>
 #include <sys/param.h>
@@ -92,14 +90,6 @@ short vs_color(short dev_handle,short ind_in,short rgb_in[],short rgb_out[]);
 int event_queueFD;
 char *ttyn;
 
-
-#ifndef __M_XENIX
-/* Blocky mode,*/
-/* replace each 320x200 pixel with multiply*multiply pixels.*/
-/* According to Dave Taylor, it still is a bonehead thing*/
-/* to use ....*/
-static int	multiply=1;
-#endif
 
 
 
@@ -215,11 +205,11 @@ void I_GetEvent(void)
 						case 0x4b: key = KEY_LEFTARROW; break;
 						case 0xb8: is_release=1;
 						case 0x38: key = KEY_RALT; break;
-#ifdef DISABLEGRAPHICS 						
+/*#ifdef DISABLEGRAPHICS */
 						/* if graphics are disabled, DEL quits the app */
 						case 0x53: I_ShutdownGraphics(); 
 								   exit(0); 
-#endif						
+/*#endif */
 					}
 					break;
 		case 0x9d: is_release=1;
@@ -231,10 +221,10 @@ void I_GetEvent(void)
 		case 0x1c: key = KEY_ENTER; break;
 		case 0x81: is_release=1;
 		case 0x01: key = KEY_ESCAPE; break;
-		case 0x95:  is_release=1;
-		case 0x15: key = 'Y'; break;
+		case 0x95: is_release=1;
+		case 0x15: key = 'y'; break;
 		case 0xB1: is_release=1;
-		case 0x31: key = 'N'; break;
+		case 0x31: key = 'n'; break;
 	}
 	
 	if (is_release)
@@ -409,6 +399,30 @@ void I_InitGraphics(void)
     	printf("export CGIPATH CGIDISP\n");
     	exit(1);
     }
+    
+
+	/* set tty to RAW mode to get scancodes */
+	ttyn = (char *) ttyname(0);
+	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
+	ioctl(consoleFD, KDSKBMODE, K_RAW);
+	close(consoleFD);    
+    
+    
+    /* Initialize the event queue */
+	if (event_queueFD = ev_init() < 0) {
+		printf("initialization of event queue failed (result=%d)\n",event_queueFD);
+		printf("(did you run mkdev mouse?)\n");
+		I_ShutdownGraphics();
+		exit(1);
+	}
+    omask=dmask;
+    if ((event_queueFD = ev_open(&dmask)) < 0) {
+	    printf("open keyboard failed (result=%d)\n",event_queueFD);                
+	    printf("(try rebooting)\n");
+        I_ShutdownGraphics();
+        exit(1);
+    }    
+    
 #ifndef DISABLEGRAPHICS
 	/* initialize i/o for newframe prompt*/
 	signal( SIGHUP, sig_handle );
@@ -454,26 +468,6 @@ void I_InitGraphics(void)
 	
 #endif
     
-	/* set tty to RAW mode to get scancodes */
-	ttyn = (char *) ttyname(0);
-	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
-	ioctl(consoleFD, KDSKBMODE, K_RAW);
-	close(consoleFD);    
-    
-    
-    /* Initialize the event queue */
-	if (event_queueFD = ev_init() < 0) {
-		printf("initialization of event queue failed (result=%d)\n",event_queueFD);
-		printf("(did you run mkdev mouse?)\n");
-		I_ShutdownGraphics();
-		exit(1);
-	}
-    omask=dmask;
-    if ((event_queueFD = ev_open(&dmask)) < 0) {
-	    printf("open of mouse and keyboard devices failed (result=%d)\n",event_queueFD);                
-        I_ShutdownGraphics();
-        exit(1);
-    }
    
 #ifdef DISABLEGRAPHICS 	
 	printf("I_InitGraphics finished\n");
