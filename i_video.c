@@ -101,19 +101,21 @@ void I_ShutdownGraphics(void)
 {
 	int consoleFD;
 	printf("I_ShutdownGraphics\n");
+
+#ifndef DISABLEGRAPHICS
+	v_clswk( devhandle );
+#endif	
+	
 	/* close event queue if still open */
 	if (fcntl(event_queueFD, F_GETFL) != -1 || errno != EBADF) {
-		printf("I_ShutdownGraphics - Closing event queue\n");
 		ev_close();
 	}
-	
+
 	/* restore tty mode */
 	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
 	ioctl(consoleFD, KDSKBMODE, K_XLATE);
 	close(consoleFD);          
-#ifndef DISABLEGRAPHICS
-	v_clswk( devhandle );
-#endif
+
 }
 
 

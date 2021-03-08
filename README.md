@@ -13,4 +13,3 @@ TODO:
 - The status bar/HUD is partially black (?)
 - Implement I_UpdateNoBlit for faster refresh
 - Use a loop in I_GetEvent to consume all events in the queue?
-- Quitting kills the shell?
