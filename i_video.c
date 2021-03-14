@@ -34,6 +34,7 @@ int XShmGetEventBase( Display* dpy ); /* problems with g++?*/
 #include <stdarg.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/machdep.h>
 
 #include <signal.h>
 
@@ -56,6 +57,8 @@ int XShmGetEventBase( Display* dpy ); /* problems with g++?*/
 #include <sys/vtkd.h>
 #include <sys/errno.h>
 
+
+unsigned char *screen;
 
 short devhandle,savin[20],savary[66];
 #define DISABLE_RENDER 1
@@ -103,9 +106,12 @@ void I_ShutdownGraphics(void)
 	printf("I_ShutdownGraphics\n");
 
 #ifndef DISABLEGRAPHICS
+#ifdef USECGI
 	v_clswk( devhandle );
-#endif	
-	
+#else
+	if ((ioctl(0,SW_VGA80x25,0))==-1) printf ("SW_VGA80x25\n");
+#endif /* USECGI */
+#endif /* DISABLEGRAPHICS */
 	/* close event queue if still open */
 	if (fcntl(event_queueFD, F_GETFL) != -1 || errno != EBADF) {
 		ev_close();
@@ -197,7 +203,6 @@ void I_GetEvent(void)
 {
 	event_t event;	
 	int scancode = 0;
-	
 	scancode = read_scancode();
 
 	if (scancode == 0xe0 || scancode == 0xe1) 	/* need to read another character to know the key*/
@@ -231,43 +236,6 @@ void I_GetEvent(void)
 	printf("Posting keycode %d with type %d\n",event.data1,event.type);
 #endif		
 	D_PostEvent(&event);
-	/* notes: 
-	   some scancodes start with e0
-	   key		press	release
-	   UP:		e0 48	e0 c8
-	   DOWN:	e0 50	e0 d0
-	   RIGHT:	e0 4d	e0 cd
-	   LEFT:	e0 4b	e0 cb
-	   RALT:	e0 38	e0 b8	   
-	   SPACE:	   39	   b9
-	   LCTRL:	   1d	   9d
-	   RSHIFT:	   2a	   aa
-	   LSHIFT:	   36	   
-	   1:		    2	   82
-	   2:			3	   83
-	   ...
-	   7:			8	   88
-	   0:			b
-   	   -:		    c
-   	   +:	shit it uses a modifier... see below key for =
-   	   =:			d
-	   ESC:			1
-	   ENTER:	   1c
-	   TAB:			f
-   	   F1:		   3b
-   	   F2:		   3c
-   	   ...
-   	   F10:		   44
-   	   F:		   21
-   	   M:		   32
-   	   C:		   2e
-   	   
-   	   to implement the three QWERTY rows:
-   	   Q:		   10
-   	   A:		   1e
-   	   Z:		   2c
-	*/
-	
 }
 
 
@@ -311,11 +279,11 @@ void I_UpdateNoBlit (void)
 /**/
 void I_FinishUpdate (void)
 {
-#ifndef DISABLEGRAPHICS
-	short origin[2], valid_width[2], valid_height[2];
 	int i, outline;
+#ifndef DISABLEGRAPHICS	
+#ifdef USECGI
+	short origin[2], valid_width[2], valid_height[2];
 	char pixels[64000];
-	
 	origin[0] = 0;
 	origin[1] = 0;
 	valid_width[0] = 0;
@@ -329,8 +297,13 @@ void I_FinishUpdate (void)
 	}
 
 	vb_pixels(devhandle,origin,320,200,valid_width,valid_height,pixels);
-#endif
+#else
+	for (i=0; i < 200; i++) {
+		memcpy(screen+320*i,screens[0]+320*i,320);
+	}
+#endif /* USECGI */
 	I_GetEvent();
+#endif /* DISABLEGRAPHICS */
 }
 
 
@@ -354,6 +327,7 @@ void I_SetPalette (byte* palette)
 #ifndef DISABLEGRAPHICS
 	register short c;
 	register int i;
+#ifdef USECGI
 	short intin[3],intout[3];
 	/*short	colors[256][3];*/
 	
@@ -369,13 +343,25 @@ void I_SetPalette (byte* palette)
 	    intin[2]=(c>>2)*15;
 	    
 	    vs_color(devhandle, i, intin, intout);
-    }    
+    }
     
     /* store the colors to the current colormap in one go.
        UNUSED: for no apparent reason it BREAKS AFTER 150
        and has bugs earlier before that too */
 	/*vsc_table(devhandle,0,127,colors);  */
-#endif
+#else
+	out (0x03c8,0);	
+
+	for (i=0;i<256;i++) {
+		c=gammatable[usegamma][*palette++];
+		out(0x3c9,c>>2);
+		c=gammatable[usegamma][*palette++];
+		out(0x3c9,c>>2);
+		c=gammatable[usegamma][*palette++];
+		out(0x3c9,c>>2);
+	}
+#endif /*USECGI*/	
+#endif /*DISABLEGRAPHICS*/
 }
 
 
@@ -385,17 +371,11 @@ void I_InitGraphics(void)
 	int consoleFD;
 	dmask_t omask, dmask = D_STRING;
 	short error;
-	if (getenv("CGIDISP") == NULL) {
-    	printf("No CGIDISP env variable found\n");
-    	printf("Make sure you correctly set CGIPATH and CGIDISP\n");
-    	printf("CGIPATH=/usr/lib/cgi\n");
-    	printf("CGIDISP=/usr/lib/vga256\n");
-    	printf("export CGIPATH CGIDISP\n");
-    	exit(1);
-    }
+	int result;
     
 
 	/* set tty to RAW mode to get scancodes */
+	
 	ttyn = (char *) ttyname(0);
 	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
 	ioctl(consoleFD, KDSKBMODE, K_RAW);
@@ -415,9 +395,9 @@ void I_InitGraphics(void)
 	    printf("(try rebooting)\n");
         I_ShutdownGraphics();
         exit(1);
-    }    
+    }     
     
-#ifndef DISABLEGRAPHICS
+
 	/* initialize i/o for newframe prompt*/
 	signal( SIGHUP, sig_handle );
 	signal( SIGINT, sig_handle );
@@ -429,7 +409,9 @@ void I_InitGraphics(void)
 	signal( SIGFPE, sig_handle );
 	signal( SIGBUS, sig_handle );
 	signal( SIGSEGV, sig_handle );
-
+	
+#ifndef DISABLEGRAPHICS
+#ifdef USECGI
 	/* Open graphics */
 	savin[0] = 2;                /* raster mode */
 	savin[1] = 1;
@@ -451,7 +433,6 @@ void I_InitGraphics(void)
 	savin[17] = 'P';
 	savin[18] = ' ';
 
-
 	/* open the workstation and save output in savary array */
 	error = v_opnwk(savin, &devhandle, savary);
 	if (error < 0) {
@@ -459,16 +440,21 @@ void I_InitGraphics(void)
 		printf("Check the environment variables: CGIPATH and CGIDISP.\n" );
 		exit (-1);
 	}
-	
-#endif
-    
-    initkeyhandler();
+#else
+	/* enter mode 13, map VGA memory to screen, and enable io */
+	if ((result=ioctl(0,SW_VGA13,0))==-1) printf ("SW_VGA13\n");
+	if ((result=ioctl(0,MAPVGA,0))==-1) printf ("MAPVGA\n");
+	screen = (unsigned char *) result;
+	if ((result=ioctl(0,KDENABIO,0))==-1) printf ("KDENABIO\n");
+#endif /* USECGI */
+#endif /* DISABLEGRAPHICS */
+
+	initkeyhandler();
    
 #ifdef DISABLEGRAPHICS 	
 	printf("I_InitGraphics finished\n");
 #endif
 }
-
 
 
 void InitExpand (void)
@@ -480,3 +466,13 @@ void InitExpand2 (void)
 {
 }
 
+
+#ifndef USECGI
+static inline void 
+out(int port, int data)
+{
+    __asm__ volatile ("outb %0,%1"::
+		      "a"      ((unsigned char)data),
+		      "d"      ((unsigned short)port));
+}
+#endif

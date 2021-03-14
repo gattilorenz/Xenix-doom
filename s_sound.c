@@ -201,6 +201,7 @@ void S_Init
 /**/
 void S_Start(void)
 {
+#ifndef __M_XENIX
   int cnum;
   int mnum;
 
@@ -245,6 +246,7 @@ void S_Start(void)
   S_ChangeMusic(mnum, true);
   
   nextcleanup = 15;
+#endif
 }	
 
 
@@ -257,7 +259,7 @@ S_StartSoundAtVolume
   int		sfx_id,
   int		volume )
 {
-
+#ifndef __M_XENIX
   int		rc;
   int		sep;
   int		pitch;
@@ -392,6 +394,7 @@ S_StartSoundAtVolume
 				       sep,
 				       pitch,
 				       priority);
+#endif /* XENIX */
 }	
 
 void
@@ -399,6 +402,7 @@ S_StartSound
 ( void*		origin,
   int		sfx_id )
 {
+#ifndef __M_XENIX
 #ifdef SAWDEBUG
     /* if (sfx_id == sfx_sawful)*/
     /* sfx_id = sfx_itemup;*/
@@ -462,7 +466,7 @@ S_StartSound
     }
 }
 #endif
- 
+#endif /* XENIX */
 }
 
 
@@ -470,7 +474,7 @@ S_StartSound
 
 void S_StopSound(void *origin)
 {
-
+#ifndef __M_XENIX
     int cnum;
 
     for (cnum=0 ; cnum<numChannels ; cnum++)
@@ -481,6 +485,7 @@ void S_StopSound(void *origin)
 	    break;
 	}
     }
+#endif    
 }
 
 
@@ -496,20 +501,24 @@ void S_StopSound(void *origin)
 /**/
 void S_PauseSound(void)
 {
+#ifndef __M_XENIX
     if (mus_playing && !mus_paused)
     {
 	I_PauseSong(mus_playing->handle);
 	mus_paused = true;
     }
+#endif
 }
 
 void S_ResumeSound(void)
 {
+#ifndef __M_XENIX
     if (mus_playing && mus_paused)
     {
 	I_ResumeSong(mus_playing->handle);
 	mus_paused = false;
     }
+#endif
 }
 
 
@@ -518,6 +527,7 @@ void S_ResumeSound(void)
 /**/
 void S_UpdateSounds(void* listener_p)
 {
+#ifndef __M_XENIX
     int		audible;
     int		cnum;
     int		volume;
@@ -610,11 +620,13 @@ void S_UpdateSounds(void* listener_p)
     /*      && !I_QrySongPlaying(mus_playing->handle)*/
     /*      && !mus_paused )*/
     /* S_StopMusic();*/
+#endif
 }
 
 
 void S_SetMusicVolume(int volume)
 {
+#ifndef __M_XENIX
     if (volume < 0 || volume > 127)
     {
 	I_Error("Attempt to set music volume at %d",
@@ -624,18 +636,19 @@ void S_SetMusicVolume(int volume)
     I_SetMusicVolume(127);
     I_SetMusicVolume(volume);
     snd_MusicVolume = volume;
+#endif
 }
 
 
 
 void S_SetSfxVolume(int volume)
 {
-
+#ifndef __M_XENIX
     if (volume < 0 || volume > 127)
 	I_Error("Attempt to set sfx volume at %d", volume);
 
     snd_SfxVolume = volume;
-
+#endif
 }
 
 /**/
@@ -651,6 +664,7 @@ S_ChangeMusic
 ( int			musicnum,
   int			looping )
 {
+#ifndef __M_XENIX
     musicinfo_t*	music;
     char		namebuf[9];
 
@@ -683,11 +697,13 @@ S_ChangeMusic
     I_PlaySong(music->handle, looping);
 
     mus_playing = music;
+#endif
 }
 
 
 void S_StopMusic(void)
 {
+#ifndef __M_XENIX
     if (mus_playing)
     {
 	if (mus_paused)
@@ -700,6 +716,7 @@ void S_StopMusic(void)
 	mus_playing->data = 0;
 	mus_playing = 0;
     }
+#endif
 }
 
 
@@ -707,7 +724,7 @@ void S_StopMusic(void)
 
 void S_StopChannel(int cnum)
 {
-
+#ifndef __M_XENIX
     int		i;
     channel_t*	c = &channels[cnum];
 
@@ -739,6 +756,7 @@ void S_StopChannel(int cnum)
 
 	c->sfxinfo = 0;
     }
+#endif /* XENIX */
 }
 
 
@@ -757,6 +775,7 @@ S_AdjustSoundParams
   int*		sep,
   int*		pitch )
 {
+#ifndef __M_XENIX
     fixed_t	approx_dist;
     fixed_t	adx;
     fixed_t	ady;
@@ -815,6 +834,7 @@ S_AdjustSoundParams
     }
     
     return (*vol > 0);
+#endif
 }
 
 
@@ -829,6 +849,7 @@ S_getChannel
 ( void*		origin,
   sfxinfo_t*	sfxinfo )
 {
+#ifndef __M_XENIX
     /* channel number to use*/
     int		cnum;
     
@@ -872,6 +893,7 @@ S_getChannel
     c->origin = origin;
 
     return cnum;
+#endif    
 }
 
 
