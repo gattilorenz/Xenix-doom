@@ -19,7 +19,6 @@ function.
 
 
 ### TODO: 
-- The status bar/HUD is partially black (?)
-- Implement I_UpdateNoBlit for faster refresh (but DOOM linux code always redraws whole scene...)
+- The status bar/HUD is partially black until automap is entered the 1st time (?)
 - ~~Use a loop in I_GetEvent to consume all events in the queue?~~
 - ~~Use direct VGA access, expecially to change the palette in one go (see https://www.tuhs.org/Usenet/comp.unix.xenix.sco/1991-February/000624.html, http://uw714doc.sco.com/en/man/html.7/display.7.html / http://www.polarhome.com/service/man/?qf=screen&tf=2&of=Xenix&sf=HW, http://web.mit.edu/ghostscript/src/ghostscript-8.14/src/gdevsco.c)~~
