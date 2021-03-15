@@ -298,9 +298,7 @@ void I_FinishUpdate (void)
 
 	vb_pixels(devhandle,origin,320,200,valid_width,valid_height,pixels);
 #else
-	for (i=0; i < 200; i++) {
-		memcpy(screen+320*i,screens[0]+320*i,320);
-	}
+		memcpy(screen,screens[0],320*200);
 #endif /* USECGI */
 	I_GetEvent();
 #endif /* DISABLEGRAPHICS */
@@ -312,8 +310,11 @@ void I_FinishUpdate (void)
 /**/
 void I_ReadScreen (byte* scr)
 {
-
-
+#ifndef DISABLEGRAPHICS	
+#ifndef USECGI
+	memcpy(screens[0],screen,320*200);
+#endif
+#endif /* DISABLEGRAPHICS */
 }
 
 
