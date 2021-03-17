@@ -14,8 +14,11 @@ use SCO's event manager (see chapter 10 of http://www.bitsavers.org/pdf/sco/syst
 ##### Update
 I rewrote the functions in i_video.c to use direct VGA access. The old CGI-based implementation is still available by defining USECGI before compilation. 
 
-If using the CGI graphics libraries, make sure to set the CGIDISP (vga256) and CGIPATH (/usr/lib/cgi) environment variables. On a real machine, you probably need a 1Ghz+ CPU to have a playable game. The CGI library is pretty slow and half-broken; the I_SetPalette call in particular is *very* slow because each color is set individually, due to a bug in the vsc_table
-function.
+The CGI graphics libraries can still be used by compiling with -DUSECGI.
+When running the CGI version, make sure to set the CGIDISP (vga256) and CGIPATH (/usr/lib/cgi) environment variables. On a real machine, you probably need a 1Ghz+ CPU 
+to have a playable game. The CGI library is pretty slow and half-broken; the I_SetPalette call in particular is *very* slow because each color is set individually, due to a bug in the vsc_table function.
+The CGI version theoretically runs on EGA cards as well, using a customized palette
+taken from https://www.doomworld.com/idgames/graphics/ega_pal.
 
 
 ### TODO: 
