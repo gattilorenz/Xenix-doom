@@ -57,9 +57,12 @@ void I_ReadScreen (byte* scr);
 void I_BeginRead (void);
 void I_EndRead (void);
 
+#ifdef SCOCGI
+#include "r_defs.h"
+extern lighttable_t*	colormaps;
+#endif 
 
-
-#endif
+#endif /* __I_VIDEO__ */
 /*-----------------------------------------------------------------------------*/
 /**/
 /* $Log:$*/
