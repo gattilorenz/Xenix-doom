@@ -804,10 +804,10 @@ void AM_updateLightLev(void)
 {
     static nexttic = 0;
     /*static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };*/
-fprintf(outdbg, "AM_updateLightLev\n");
     static int litelevels[] = { 0, 4, 7, 10, 12, 14, 15, 15 };
     static int litelevelscnt = 0;
-   
+
+fprintf(outdbg, "AM_updateLightLev\n");   
     /* Change light level*/
     if (amclock>nexttic)
     {
@@ -870,7 +870,7 @@ AM_clipMline
 ( mline_t*	ml,
   fline_t*	fl )
 {
-fprintf(outdbg, "AM_clipMline\n");
+
     enum
     {
 	LEFT	=1,
@@ -886,7 +886,8 @@ fprintf(outdbg, "AM_clipMline\n");
     fpoint_t	tmp;
     int		dx;
     int		dy;
-
+    
+fprintf(outdbg, "AM_clipMline\n");
     
 #define DOOUTCODE(oc, mx, my) \
     (oc) = 0; \

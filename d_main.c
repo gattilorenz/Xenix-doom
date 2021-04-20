@@ -1093,7 +1093,7 @@ void D_DoomMain (void)
 	/* Ouch.*/
 	break;
     }
-
+	outdbg = fopen("log.txt","w+");
     printf ("M_Init: Init miscellaneous info.\n");
     M_Init ();
 
@@ -1163,7 +1163,7 @@ void D_DoomMain (void)
 	G_LoadGame (file);
     }
 	
-	outdbg = fopen("log.txt","w+");
+
     if ( gameaction != ga_loadgame )
     {
 	if (autostart || netgame)

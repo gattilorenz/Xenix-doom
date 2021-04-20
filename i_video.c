@@ -298,7 +298,7 @@ void I_GetEvent(void)
 		 event.data1 = ASCIINames[scancode];
 	else event.data1 = scancode;
 	
-	
+fprintf(outdbg, "I_GetEvent scancode=%c\n",event.data1);
 #ifdef DISABLEGRAPHICS 						
 	printf("Posting keycode %d with type %d\n",event.data1,event.type);
 #endif		
