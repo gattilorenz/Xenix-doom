@@ -472,16 +472,16 @@ void I_InitGraphics(void)
     
     /* Initialize the event queue */
 	if (event_queueFD = ev_init() < 0) {
+		I_ShutdownGraphics();	
 		printf("initialization of event queue failed (result=%d)\n",event_queueFD);
 		printf("(did you run mkdev mouse?)\n");
-		I_ShutdownGraphics();
 		exit(1);
 	}
     omask=dmask;
     if ((event_queueFD = ev_open(&dmask)) < 0) {
+        I_ShutdownGraphics();    
 	    printf("open keyboard failed (result=%d)\n",event_queueFD);                
 	    printf("(try rebooting)\n");
-        I_ShutdownGraphics();
         exit(1);
     }     
     
