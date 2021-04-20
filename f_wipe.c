@@ -278,14 +278,14 @@ wipe_ScreenWipe
 {
     int rc;
     static int (*wipes[])(int, int, int) =
-fprintf(outdbg, "wipe_ScreenWipe\n");
     {
 	wipe_initColorXForm, wipe_doColorXForm, wipe_exitColorXForm,
 	wipe_initMelt, wipe_doMelt, wipe_exitMelt
     };
 
     void V_MarkRect(int, int, int, int);
-
+	
+printf(outdbg, "wipe_ScreenWipe\n");
     /* initial stuff*/
     if (!go)
     {
