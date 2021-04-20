@@ -7,6 +7,10 @@ use File::Slurp;
 my @cfiles = glob("*.c");
 
 for my $file (@cfiles) {
+	if (if -f "$file.old") {
+		warn "$file.old exists, skipping $file...\n";
+		next;
+	}
 	my @output = `./csourceparser.pl -d -f $file`;
 	my @cfile = read_file($file);
 	my @functions;
@@ -29,9 +33,7 @@ for my $file (@cfiles) {
 	my $lasti = 0;
 	for my $function (@functions) {
 		chomp $function;
-		my ($returntype, $fnameandparms, $semicolumn) = split "\t", $function;
-		$fnameandparms =~ /^\s*(.*?)\s*(\(.*\))/;
-		my ($name, $params) = ($1, $2);
+		my ($returntype, $name, @params) = split /\s+/, $function;
 		my $found = 0;
 		for (my $i = $lasti; $i < scalar(@cfile); $i++) {
 			my $line = $cfile[$i];
@@ -75,7 +77,7 @@ for my $file (@cfiles) {
 			}	
 		}
 		if ($found==0) {
-			warn "couldn't resolve function $fnameandparms in file $file\n";
+			warn "couldn't resolve function $function in file $file\n";
 		}
 	}
 	rename $file, "$file.old";

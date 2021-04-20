@@ -72,6 +72,7 @@ STlib_initNum
   boolean*		on,
   int			width )
 {
+fprintf(outdbg, "STlib_initNum\n");
     n->x	= x;
     n->y	= y;
     n->oldnum	= 0;
@@ -102,6 +103,7 @@ STlib_drawNum
     
     int		neg;
 
+fprintf(outdbg, "STlib_drawNum\n");
     n->oldnum = *n->num;
 
     neg = num < 0;
@@ -154,6 +156,7 @@ STlib_updateNum
 ( st_number_t*		n,
   boolean		refresh )
 {
+fprintf(outdbg, "STlib_updateNum\n");
     if (*n->on) STlib_drawNum(n, refresh);
 }
 
@@ -169,6 +172,7 @@ STlib_initPercent
   boolean*		on,
   patch_t*		percent )
 {
+fprintf(outdbg, "STlib_initPercent\n");
     STlib_initNum(&p->n, x, y, pl, num, on, 3);
     p->p = percent;
 }
@@ -181,6 +185,7 @@ STlib_updatePercent
 ( st_percent_t*		per,
   int			refresh )
 {
+fprintf(outdbg, "STlib_updatePercent\n");
     if (refresh && *per->n.on)
 	V_DrawPatch(per->n.x, per->n.y, FG, per->p);
     
@@ -198,6 +203,7 @@ STlib_initMultIcon
   int*			inum,
   boolean*		on )
 {
+fprintf(outdbg, "STlib_initMultIcon\n");
     i->x	= x;
     i->y	= y;
     i->oldinum 	= -1;
@@ -218,6 +224,7 @@ STlib_updateMultIcon
     int			x;
     int			y;
 
+fprintf(outdbg, "STlib_updateMultIcon\n");
     if (*mi->on
 	&& (mi->oldinum != *mi->inum || refresh)
 	&& (*mi->inum!=-1))
@@ -250,6 +257,7 @@ STlib_initBinIcon
   boolean*		val,
   boolean*		on )
 {
+fprintf(outdbg, "STlib_initBinIcon\n");
     b->x	= x;
     b->y	= y;
     b->oldval	= 0;
@@ -270,6 +278,7 @@ STlib_updateBinIcon
     int			w;
     int			h;
 
+fprintf(outdbg, "STlib_updateBinIcon\n");
     if (*bi->on
 	&& (bi->oldval != *bi->val || refresh))
     {

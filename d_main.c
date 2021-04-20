@@ -149,6 +149,7 @@ int 		eventtail;
 /**/
 void D_PostEvent (event_t* ev)
 {
+fprintf(outdbg, "D_PostEvent\n");
     events[eventhead] = *ev;
     eventhead = (++eventhead)&(MAXEVENTS-1);
 }
@@ -163,6 +164,7 @@ void D_ProcessEvents (void)
     event_t*	ev;
 	
     /* IF STORE DEMO, DO NOT ACCEPT INPUT*/
+fprintf(outdbg, "D_ProcessEvents\n");
     if ( ( gamemode == commercial )
 	 && (W_CheckNumForName("map01")<0) )
       return;

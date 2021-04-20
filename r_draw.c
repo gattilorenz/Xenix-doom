@@ -700,6 +700,7 @@ R_InitBuffer
     int		i; 
 
     /* Handle resize,*/
+fprintf(outdbg, "R_InitBuffer\n");
     /*  e.g. smaller view windows*/
     /*  with border and/or status bar.*/
     viewwindowx = (SCREENWIDTH-width) >> 1; 

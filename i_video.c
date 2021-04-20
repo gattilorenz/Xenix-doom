@@ -225,6 +225,7 @@ void sig_handle(sig) {
 void I_StartFrame (void)
 {
 
+fprintf(outdbg, "I_StartFrame\n");
 }
 
 
@@ -336,6 +337,7 @@ void I_UpdateNoBlit (void)
 		}
 	vb_pixels(devhandle,origin,20,20,width,height,pixels);
 	*/
+fprintf(outdbg, "I_UpdateNoBlit\n");
 	/* STUPID DIRTYBOX is top - right - bottom - left, so (ymax,xmax,ymin,xmin) */
 	/*printf("Updated area dirtybox: (height=%d,x=%d,y=%d,width=%d)\n",dirtybox[0],dirtybox[1],dirtybox[2],dirtybox[3]);*/
 }
@@ -345,6 +347,7 @@ void I_UpdateNoBlit (void)
 /**/
 void I_FinishUpdate (void)
 {
+fprintf(outdbg, "I_FinishUpdate\n");
 #ifndef DISABLEGRAPHICS	
 #ifdef USECGI
 	int i, outline;

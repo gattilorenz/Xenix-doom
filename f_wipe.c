@@ -57,6 +57,7 @@ wipe_shittyColMajorXform
     int		y;
     short*	dest;
 
+fprintf(outdbg, "wipe_shittyColMajorXform\n");
     dest = (short*) Z_Malloc(width*height*2, PU_STATIC, 0);
 
     for(y=0;y<height;y++)
@@ -75,6 +76,7 @@ wipe_initColorXForm
   int	height,
   int	ticks )
 {
+fprintf(outdbg, "wipe_initColorXForm\n");
     memcpy(wipe_scr, wipe_scr_start, width*height);
     return 0;
 }
@@ -90,6 +92,7 @@ wipe_doColorXForm
     byte*	e;
     int		newval;
 
+fprintf(outdbg, "wipe_doColorXForm\n");
     changed = false;
     w = wipe_scr;
     e = wipe_scr_end;
@@ -131,6 +134,7 @@ wipe_exitColorXForm
   int	height,
   int	ticks )
 {
+fprintf(outdbg, "wipe_exitColorXForm\n");
     return 0;
 }
 
@@ -146,6 +150,7 @@ wipe_initMelt
     int i, r;
     
     /* copy start screen to main screen*/
+fprintf(outdbg, "wipe_initMelt\n");
     memcpy(wipe_scr, wipe_scr_start, width*height);
     
     /* makes this wipe faster (in theory)*/
@@ -183,6 +188,7 @@ wipe_doMelt
     short*	d;
     boolean	done = true;
 
+fprintf(outdbg, "wipe_doMelt\n");
     width/=2;
 
     while (ticks--)
@@ -229,6 +235,7 @@ wipe_exitMelt
   int	height,
   int	ticks )
 {
+fprintf(outdbg, "wipe_exitMelt\n");
     Z_Free(y);
     return 0;
 }
@@ -240,6 +247,7 @@ wipe_StartScreen
   int	width,
   int	height )
 {
+fprintf(outdbg, "wipe_StartScreen\n");
     wipe_scr_start = screens[2];
     I_ReadScreen(wipe_scr_start);
     return 0;
@@ -252,6 +260,7 @@ wipe_EndScreen
   int	width,
   int	height )
 {
+fprintf(outdbg, "wipe_EndScreen\n");
     wipe_scr_end = screens[3];
     I_ReadScreen(wipe_scr_end);
     V_DrawBlock(x, y, 0, width, height, wipe_scr_start); /* restore start scr.*/
@@ -269,6 +278,7 @@ wipe_ScreenWipe
 {
     int rc;
     static int (*wipes[])(int, int, int) =
+fprintf(outdbg, "wipe_ScreenWipe\n");
     {
 	wipe_initColorXForm, wipe_doColorXForm, wipe_exitColorXForm,
 	wipe_initMelt, wipe_doMelt, wipe_exitMelt

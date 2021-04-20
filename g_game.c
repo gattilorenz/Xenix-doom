@@ -447,6 +447,7 @@ void G_DoLoadLevel (void)
     int             i; 
 
     /* Set the sky map.*/
+fprintf(outdbg, "G_DoLoadLevel\n");
     /* First thing, we have a dummy sky texture name,*/
     /*  a flat. The data is in the WAD only because*/
     /*  we look for an actual index, instead of simply*/
@@ -763,6 +764,7 @@ void G_InitPlayer (int player)
     player_t*	p; 
  
     /* set up the saved info         */
+fprintf(outdbg, "G_InitPlayer\n");
     p = &players[player]; 
 	 
     /* clear everything else to defaults */
@@ -780,6 +782,7 @@ void G_PlayerFinishLevel (int player)
 { 
     player_t*	p; 
 	 
+fprintf(outdbg, "G_PlayerFinishLevel\n");
     p = &players[player]; 
 	 
     memset (p->powers, 0, sizeof (p->powers)); 
@@ -806,6 +809,7 @@ void G_PlayerReborn (int player)
     int		itemcount;
     int		secretcount; 
 	 
+fprintf(outdbg, "G_PlayerReborn\n");
     memcpy (frags,players[player].frags,sizeof(frags)); 
     killcount = players[player].killcount; 
     itemcount = players[player].itemcount; 
@@ -852,6 +856,7 @@ G_CheckSpot
     mobj_t*		mo; 
     int			i;
 	
+fprintf(outdbg, "G_CheckSpot\n");
     if (!players[playernum].mo)
     {
 	/* first spawn of level, before corpses*/
@@ -925,6 +930,7 @@ void G_DoReborn (int playernum)
 { 
     int                             i; 
 	 
+fprintf(outdbg, "G_DoReborn\n");
     if (!netgame)
     {
 	/* reload the level from scratch*/
@@ -1001,6 +1007,7 @@ extern char*	pagename;
  
 void G_ExitLevel (void) 
 { 
+fprintf(outdbg, "G_ExitLevel\n");
     secretexit = false; 
     gameaction = ga_completed; 
 } 
@@ -1021,6 +1028,7 @@ void G_DoCompleted (void)
 { 
     int             i; 
 	 
+fprintf(outdbg, "G_DoCompleted\n");
     gameaction = ga_nothing; 
  
     for (i=0 ; i<MAXPLAYERS ; i++) 
@@ -1146,6 +1154,7 @@ void G_DoCompleted (void)
 /**/
 void G_WorldDone (void) 
 { 
+fprintf(outdbg, "G_WorldDone\n");
     gameaction = ga_worlddone; 
 
     if (secretexit) 
@@ -1191,6 +1200,7 @@ char	savename[256];
 
 void G_LoadGame (char* name) 
 { 
+fprintf(outdbg, "G_LoadGame\n");
     strcpy (savename, name); 
     gameaction = ga_loadgame; 
 } 
@@ -1344,6 +1354,7 @@ G_DeferedInitNew
 
 void G_DoNewGame (void) 
 {
+fprintf(outdbg, "G_DoNewGame\n");
     demoplayback = false; 
     netdemo = false;
     netgame = false;
@@ -1369,6 +1380,7 @@ G_InitNew
 { 
     int             i; 
 	 
+fprintf(outdbg, "G_InitNew\n");
     if (paused) 
     { 
 	paused = false; 

@@ -591,6 +591,7 @@ P_SetupLevel
     char	lumpname[9];
     int		lumpnum;
 	
+fprintf(outdbg, "P_SetupLevel\n");
     totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
     wminfo.partime = 180;
     for (i=0 ; i<MAXPLAYERS ; i++)
@@ -699,6 +700,7 @@ P_SetupLevel
 /**/
 void P_Init (void)
 {
+fprintf(outdbg, "P_Init\n");
     P_InitSwitchList ();
     P_InitPicAnims ();
     R_InitSprites (sprnames);
