@@ -1161,7 +1161,7 @@ void D_DoomMain (void)
 	G_LoadGame (file);
     }
 	
-
+	outdbg = fopen("log.txt","w+");
     if ( gameaction != ga_loadgame )
     {
 	if (autostart || netgame)
