@@ -464,6 +464,7 @@ void I_InitGraphics(void)
 	/* set tty to RAW mode to get scancodes */
 	ttyn = (char *) ttyname(0);
 	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
+	ioctl(consoleFD, KDSKBMODE, K_XLATE);  /* force kb driver to known state for gmake bug */
 	ioctl(consoleFD, KDSKBMODE, K_RAW);
 	close(consoleFD);    
     
