@@ -53,6 +53,9 @@ void ST_Start (void);
 /* Called by startup code.*/
 void ST_Init (void);
 
+/* Force a full status bar background refresh on next ST_Drawer call.*/
+void ST_forceRefresh (void);
+
 
 
 /* States for status bar code.*/

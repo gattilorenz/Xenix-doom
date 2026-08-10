@@ -1458,6 +1458,12 @@ void ST_Start (void)
 
 }
 
+void ST_forceRefresh (void)
+{
+write(outdbg, "ST_forceRefresh\n", 16);
+    st_firsttime = true;
+}
+
 void ST_Stop (void)
 {
     if (st_stopped)
