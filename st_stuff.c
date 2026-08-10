@@ -1486,9 +1486,15 @@ write(outdbg, "ST_Start\n", 9);
 
 }
 
+void ST_forceRefresh (void)
+{
+write(outdbg, "ST_forceRefresh\n", 16);
+    st_firsttime = true;
+}
+
 void ST_Stop (void)
 {
-fprintf(outdbg, "ST_Stop\n");
+write(outdbg, "ST_Stop\n", 8);
     if (st_stopped)
 	return;
 
