@@ -312,7 +312,6 @@ AM_getIslope
 {
     int dx, dy;
 
-fprintf(outdbg, "AM_getIslope\n");
     dy = ml->a.y - ml->b.y;
     dx = ml->b.x - ml->a.x;
     if (!dy) is->islp = (dx<0?-MAXINT:MAXINT);
@@ -327,7 +326,6 @@ fprintf(outdbg, "AM_getIslope\n");
 /**/
 void AM_activateNewScale(void)
 {
-fprintf(outdbg, "AM_activateNewScale\n");
     m_x += m_w/2;
     m_y += m_h/2;
     m_w = FTOM(f_w);
@@ -343,7 +341,6 @@ fprintf(outdbg, "AM_activateNewScale\n");
 /**/
 void AM_saveScaleAndLoc(void)
 {
-fprintf(outdbg, "AM_saveScaleAndLoc\n");
     old_m_x = m_x;
     old_m_y = m_y;
     old_m_w = m_w;
@@ -356,7 +353,6 @@ fprintf(outdbg, "AM_saveScaleAndLoc\n");
 void AM_restoreScaleAndLoc(void)
 {
 
-fprintf(outdbg, "AM_restoreScaleAndLoc\n");
     m_w = old_m_w;
     m_h = old_m_h;
     if (!followplayer)
@@ -380,7 +376,6 @@ fprintf(outdbg, "AM_restoreScaleAndLoc\n");
 /**/
 void AM_addMark(void)
 {
-fprintf(outdbg, "AM_addMark\n");
     markpoints[markpointnum].x = m_x + m_w/2;
     markpoints[markpointnum].y = m_y + m_h/2;
     markpointnum = (markpointnum + 1) % AM_NUMMARKPOINTS;
@@ -397,7 +392,6 @@ void AM_findMinMaxBoundaries(void)
     fixed_t a;
     fixed_t b;
 
-fprintf(outdbg, "AM_findMinMaxBoundaries\n");
     min_x = min_y =  MAXINT;
     max_x = max_y = -MAXINT;
   
@@ -434,7 +428,6 @@ fprintf(outdbg, "AM_findMinMaxBoundaries\n");
 /**/
 void AM_changeWindowLoc(void)
 {
-fprintf(outdbg, "AM_changeWindowLoc\n");
     if (m_paninc.x || m_paninc.y)
     {
 	followplayer = 0;
@@ -467,7 +460,7 @@ void AM_initVariables(void)
     int pnum;
     static event_t st_notify = { ev_keyup, AM_MSGENTERED };
 
-fprintf(outdbg, "AM_initVariables\n");
+write(outdbg, "AM_initVariables\n", strlen("AM_initVariables\n"));
     automapactive = true;
     fb = screens[0];
 
@@ -512,7 +505,6 @@ void AM_loadPics(void)
     int i;
     char namebuf[9];
   
-fprintf(outdbg, "AM_loadPics\n");
     for (i=0;i<10;i++)
     {
 	sprintf(namebuf, "AMMNUM%d", i);
@@ -525,7 +517,6 @@ void AM_unloadPics(void)
 {
     int i;
   
-fprintf(outdbg, "AM_unloadPics\n");
     for (i=0;i<10;i++)
 	Z_ChangeTag(marknums[i], PU_CACHE);
 
@@ -535,7 +526,6 @@ void AM_clearMarks(void)
 {
     int i;
 
-fprintf(outdbg, "AM_clearMarks\n");
     for (i=0;i<AM_NUMMARKPOINTS;i++)
 	markpoints[i].x = -1; /* means empty*/
     markpointnum = 0;
@@ -547,7 +537,7 @@ fprintf(outdbg, "AM_clearMarks\n");
 /**/
 void AM_LevelInit(void)
 {
-fprintf(outdbg, "AM_LevelInit\n");
+write(outdbg, "AM_LevelInit\n", strlen("AM_LevelInit\n"));
     leveljuststarted = 0;
 
     f_x = f_y = 0;
@@ -573,7 +563,7 @@ void AM_Stop (void)
 {
     static event_t st_notify = { 0, ev_keyup, AM_MSGEXITED };
 
-fprintf(outdbg, "AM_Stop\n");
+write(outdbg, "AM_Stop\n", strlen("AM_Stop\n"));
     AM_unloadPics();
     automapactive = false;
     ST_Responder(&st_notify);
@@ -587,7 +577,7 @@ void AM_Start (void)
 {
     static int lastlevel = -1, lastepisode = -1;
 
-fprintf(outdbg, "AM_Start\n");
+write(outdbg, "AM_Start\n", strlen("AM_Start\n"));
     if (!stopped) AM_Stop();
     stopped = false;
     if (lastlevel != gamemap || lastepisode != gameepisode)
@@ -605,7 +595,6 @@ fprintf(outdbg, "AM_Start\n");
 /**/
 void AM_minOutWindowScale(void)
 {
-fprintf(outdbg, "AM_minOutWindowScale\n");
     scale_mtof = min_scale_mtof;
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
     AM_activateNewScale();
@@ -616,7 +605,6 @@ fprintf(outdbg, "AM_minOutWindowScale\n");
 /**/
 void AM_maxOutWindowScale(void)
 {
-fprintf(outdbg, "AM_maxOutWindowScale\n");
     scale_mtof = max_scale_mtof;
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
     AM_activateNewScale();
@@ -636,7 +624,7 @@ AM_Responder
     static int bigstate=0;
     static char buffer[20];
 
-fprintf(outdbg, "AM_Responder\n");
+write(outdbg, "AM_Responder\n", strlen("AM_Responder\n"));
     rc = false;
 
     if (!automapactive)
@@ -759,7 +747,6 @@ void AM_changeWindowScale(void)
 {
 
     /* Change the scaling multipliers*/
-fprintf(outdbg, "AM_changeWindowScale\n");
     scale_mtof = FixedMul(scale_mtof, mtof_zoommul);
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 
@@ -778,7 +765,6 @@ fprintf(outdbg, "AM_changeWindowScale\n");
 void AM_doFollowPlayer(void)
 {
 
-fprintf(outdbg, "AM_doFollowPlayer\n");
     if (f_oldloc.x != plr->mo->x || f_oldloc.y != plr->mo->y)
     {
 	m_x = FTOM(MTOF(plr->mo->x)) - m_w/2;
@@ -807,7 +793,6 @@ void AM_updateLightLev(void)
     static int litelevels[] = { 0, 4, 7, 10, 12, 14, 15, 15 };
     static int litelevelscnt = 0;
 
-fprintf(outdbg, "AM_updateLightLev\n");   
     /* Change light level*/
     if (amclock>nexttic)
     {
@@ -825,7 +810,7 @@ fprintf(outdbg, "AM_updateLightLev\n");
 void AM_Ticker (void)
 {
 
-fprintf(outdbg, "AM_Ticker\n");
+write(outdbg, "AM_Ticker\n", strlen("AM_Ticker\n"));
     if (!automapactive)
 	return;
 
@@ -853,7 +838,7 @@ fprintf(outdbg, "AM_Ticker\n");
 /**/
 void AM_clearFB(int color)
 {
-fprintf(outdbg, "AM_clearFB\n");
+write(outdbg, "AM_clearFB\n", strlen("AM_clearFB\n"));
     memset(fb, color, f_w*f_h);
 }
 
@@ -887,7 +872,6 @@ AM_clipMline
     int		dx;
     int		dy;
     
-fprintf(outdbg, "AM_clipMline\n");
     
 #define DOOUTCODE(oc, mx, my) \
     (oc) = 0; \
@@ -1016,7 +1000,7 @@ AM_drawFline
     static fuck = 0;
 
     /* For debugging only*/
-fprintf(outdbg, "AM_drawFline\n");
+
     if (      fl->a.x < 0 || fl->a.x >= f_w
 	   || fl->a.y < 0 || fl->a.y >= f_h
 	   || fl->b.x < 0 || fl->b.x >= f_w
@@ -1084,7 +1068,6 @@ AM_drawMline
 {
     static fline_t fl;
 
-fprintf(outdbg, "AM_drawMline\n");
     if (AM_clipMline(ml, &fl))
 	AM_drawFline(&fl, color); /* draws it on frame buffer using fb coords*/
 }
@@ -1101,7 +1084,6 @@ void AM_drawGrid(int color)
     mline_t ml;
 
     /* Figure out start of vertical gridlines*/
-fprintf(outdbg, "AM_drawGrid\n");
     start = m_x;
     if ((start-bmaporgx)%(MAPBLOCKUNITS<<FRACBITS))
 	start += (MAPBLOCKUNITS<<FRACBITS)
@@ -1146,7 +1128,6 @@ void AM_drawWalls(void)
     int i;
     static mline_t l;
 
-fprintf(outdbg, "AM_drawWalls\n");
     for (i=0;i<numlines;i++)
     {
 	l.a.x = lines[i].v1->x;
@@ -1205,7 +1186,6 @@ AM_rotate
 {
     fixed_t tmpx;
 
-fprintf(outdbg, "AM_rotate\n");
     tmpx =
 	FixedMul(*x,finecosine[a>>ANGLETOFINESHIFT])
 	- FixedMul(*y,finesine[a>>ANGLETOFINESHIFT]);
@@ -1230,7 +1210,6 @@ AM_drawLineCharacter
     int		i;
     mline_t	l;
 
-fprintf(outdbg, "AM_drawLineCharacter\n");
     for (i=0;i<lineguylines;i++)
     {
 	l.a.x = lineguy[i].a.x;
@@ -1275,7 +1254,6 @@ void AM_drawPlayers(void)
     int		their_color = -1;
     int		color;
 
-fprintf(outdbg, "AM_drawPlayers\n");
     if (!netgame)
     {
 	if (cheating)
@@ -1320,7 +1298,6 @@ AM_drawThings
     int		i;
     mobj_t*	t;
 
-fprintf(outdbg, "AM_drawThings\n");
     for (i=0;i<numsectors;i++)
     {
 	t = sectors[i].thinglist;
@@ -1338,7 +1315,6 @@ void AM_drawMarks(void)
 {
     int i, fx, fy, w, h;
 
-fprintf(outdbg, "AM_drawMarks\n");
     for (i=0;i<AM_NUMMARKPOINTS;i++)
     {
 	if (markpoints[i].x != -1)
@@ -1358,14 +1334,13 @@ fprintf(outdbg, "AM_drawMarks\n");
 
 void AM_drawCrosshair(int color)
 {
-fprintf(outdbg, "AM_drawCrosshair\n");
     fb[(f_w*(f_h+1))/2] = color; /* single point for now*/
 
 }
 
 void AM_Drawer (void)
 {
-fprintf(outdbg, "AM_Drawer\n");
+write(outdbg, "AM_Drawer\n", strlen("AM_Drawer\n"));
     if (!automapactive) return;
 
     AM_clearFB(BACKGROUND);

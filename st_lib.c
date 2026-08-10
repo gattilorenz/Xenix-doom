@@ -26,6 +26,7 @@ static const char
 rcsid[] = "$Id: st_lib.c,v 1.4 1997/02/03 16:47:56 b1 Exp $";
 
 #include <ctype.h>
+#include <unistd.h>
 
 #include "doomdef.h"
 
@@ -57,6 +58,7 @@ patch_t*		sttminus;
 
 void STlib_init(void)
 {
+write(outdbg, "STlib_init\n", 11);
     sttminus = (patch_t *) W_CacheLumpName("STTMINUS", PU_STATIC);
 }
 
@@ -70,9 +72,9 @@ STlib_initNum
   patch_t**		pl,
   int*			num,
   boolean*		on,
-  int			width )
+   int			width )
 {
-fprintf(outdbg, "STlib_initNum\n");
+write(outdbg, "STlib_initNum\n", 14);
     n->x	= x;
     n->y	= y;
     n->oldnum	= 0;
@@ -103,7 +105,7 @@ STlib_drawNum
     
     int		neg;
 
-fprintf(outdbg, "STlib_drawNum\n");
+write(outdbg, "STlib_drawNum\n", 14);
     n->oldnum = *n->num;
 
     neg = num < 0;
@@ -156,7 +158,7 @@ STlib_updateNum
 ( st_number_t*		n,
   boolean		refresh )
 {
-fprintf(outdbg, "STlib_updateNum\n");
+write(outdbg, "STlib_updateNum\n", 16);
     if (*n->on) STlib_drawNum(n, refresh);
 }
 
@@ -170,9 +172,9 @@ STlib_initPercent
   patch_t**		pl,
   int*			num,
   boolean*		on,
-  patch_t*		percent )
+   patch_t*		percent )
 {
-fprintf(outdbg, "STlib_initPercent\n");
+write(outdbg, "STlib_initPercent\n", 18);
     STlib_initNum(&p->n, x, y, pl, num, on, 3);
     p->p = percent;
 }
@@ -185,7 +187,7 @@ STlib_updatePercent
 ( st_percent_t*		per,
   int			refresh )
 {
-fprintf(outdbg, "STlib_updatePercent\n");
+write(outdbg, "STlib_updatePercent\n", 20);
     if (refresh && *per->n.on)
 	V_DrawPatch(per->n.x, per->n.y, FG, per->p);
     
@@ -201,9 +203,9 @@ STlib_initMultIcon
   int			y,
   patch_t**		il,
   int*			inum,
-  boolean*		on )
+   boolean*		on )
 {
-fprintf(outdbg, "STlib_initMultIcon\n");
+write(outdbg, "STlib_initMultIcon\n", 18);
     i->x	= x;
     i->y	= y;
     i->oldinum 	= -1;
@@ -224,7 +226,7 @@ STlib_updateMultIcon
     int			x;
     int			y;
 
-fprintf(outdbg, "STlib_updateMultIcon\n");
+write(outdbg, "STlib_updateMultIcon\n", 21);
     if (*mi->on
 	&& (mi->oldinum != *mi->inum || refresh)
 	&& (*mi->inum!=-1))
@@ -255,9 +257,9 @@ STlib_initBinIcon
   int			y,
   patch_t*		i,
   boolean*		val,
-  boolean*		on )
+   boolean*		on )
 {
-fprintf(outdbg, "STlib_initBinIcon\n");
+write(outdbg, "STlib_initBinIcon\n", 18);
     b->x	= x;
     b->y	= y;
     b->oldval	= 0;
@@ -278,7 +280,7 @@ STlib_updateBinIcon
     int			w;
     int			h;
 
-fprintf(outdbg, "STlib_updateBinIcon\n");
+write(outdbg, "STlib_updateBinIcon\n", 20);
     if (*bi->on
 	&& (bi->oldval != *bi->val || refresh))
     {

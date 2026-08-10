@@ -37,7 +37,10 @@ static const char rcsid[] = "$Id: d_main.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
+#include <termio.h>
+#include <errno.h>
 #endif
 
 
@@ -149,7 +152,7 @@ int 		eventtail;
 /**/
 void D_PostEvent (event_t* ev)
 {
-fprintf(outdbg, "D_PostEvent\n");
+write(outdbg, "D_PostEvent\n", strlen("D_PostEvent\n"));
     events[eventhead] = *ev;
     eventhead = (++eventhead)&(MAXEVENTS-1);
 }
@@ -164,7 +167,6 @@ void D_ProcessEvents (void)
     event_t*	ev;
 	
     /* IF STORE DEMO, DO NOT ACCEPT INPUT*/
-fprintf(outdbg, "D_ProcessEvents\n");
     if ( ( gamemode == commercial )
 	 && (W_CheckNumForName("map01")<0) )
       return;
@@ -1093,7 +1095,21 @@ void D_DoomMain (void)
 	/* Ouch.*/
 	break;
     }
-	outdbg = fopen("log.txt","w+");
+	outdbg = open("/dev/tty1a", O_RDWR | O_NDELAY);
+	if (outdbg >= 0)
+	{
+	    struct termio tio;
+	    if (ioctl(outdbg, TCGETA, &tio) >= 0)
+	    {
+		tio.c_iflag = 0;
+		tio.c_oflag = 0;
+		tio.c_lflag = 0;
+		tio.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
+		tio.c_cc[VMIN]  = 1;
+		tio.c_cc[VTIME] = 0;
+		ioctl(outdbg, TCSETA, &tio);
+	    }
+	}
     printf ("M_Init: Init miscellaneous info.\n");
     M_Init ();
 

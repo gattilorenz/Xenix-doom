@@ -57,7 +57,7 @@ wipe_shittyColMajorXform
     int		y;
     short*	dest;
 
-fprintf(outdbg, "wipe_shittyColMajorXform\n");
+write(outdbg, "wipe_shittyColMajorXform\n", strlen("wipe_shittyColMajorXform\n"));
     dest = (short*) Z_Malloc(width*height*2, PU_STATIC, 0);
 
     for(y=0;y<height;y++)
@@ -76,7 +76,7 @@ wipe_initColorXForm
   int	height,
   int	ticks )
 {
-fprintf(outdbg, "wipe_initColorXForm\n");
+write(outdbg, "wipe_initColorXForm\n", strlen("wipe_initColorXForm\n"));
     memcpy(wipe_scr, wipe_scr_start, width*height);
     return 0;
 }
@@ -92,7 +92,7 @@ wipe_doColorXForm
     byte*	e;
     int		newval;
 
-fprintf(outdbg, "wipe_doColorXForm\n");
+write(outdbg, "wipe_doColorXForm\n", strlen("wipe_doColorXForm\n"));
     changed = false;
     w = wipe_scr;
     e = wipe_scr_end;
@@ -134,7 +134,7 @@ wipe_exitColorXForm
   int	height,
   int	ticks )
 {
-fprintf(outdbg, "wipe_exitColorXForm\n");
+write(outdbg, "wipe_exitColorXForm\n", strlen("wipe_exitColorXForm\n"));
     return 0;
 }
 
@@ -150,7 +150,7 @@ wipe_initMelt
     int i, r;
     
     /* copy start screen to main screen*/
-fprintf(outdbg, "wipe_initMelt\n");
+write(outdbg, "wipe_initMelt\n", strlen("wipe_initMelt\n"));
     memcpy(wipe_scr, wipe_scr_start, width*height);
     
     /* makes this wipe faster (in theory)*/
@@ -188,7 +188,7 @@ wipe_doMelt
     short*	d;
     boolean	done = true;
 
-fprintf(outdbg, "wipe_doMelt\n");
+write(outdbg, "wipe_doMelt\n", strlen("wipe_doMelt\n"));
     width/=2;
 
     while (ticks--)
@@ -235,7 +235,7 @@ wipe_exitMelt
   int	height,
   int	ticks )
 {
-fprintf(outdbg, "wipe_exitMelt\n");
+write(outdbg, "wipe_exitMelt\n", strlen("wipe_exitMelt\n"));
     Z_Free(y);
     return 0;
 }
@@ -247,7 +247,7 @@ wipe_StartScreen
   int	width,
   int	height )
 {
-fprintf(outdbg, "wipe_StartScreen\n");
+write(outdbg, "wipe_StartScreen\n", strlen("wipe_StartScreen\n"));
     wipe_scr_start = screens[2];
     I_ReadScreen(wipe_scr_start);
     return 0;
@@ -260,7 +260,7 @@ wipe_EndScreen
   int	width,
   int	height )
 {
-fprintf(outdbg, "wipe_EndScreen\n");
+write(outdbg, "wipe_EndScreen\n", strlen("wipe_EndScreen\n"));
     wipe_scr_end = screens[3];
     I_ReadScreen(wipe_scr_end);
     V_DrawBlock(x, y, 0, width, height, wipe_scr_start); /* restore start scr.*/
@@ -285,7 +285,7 @@ wipe_ScreenWipe
 
     void V_MarkRect(int, int, int, int);
 	
-printf(outdbg, "wipe_ScreenWipe\n");
+write(outdbg, "wipe_ScreenWipe\n", strlen("wipe_ScreenWipe\n"));
     /* initial stuff*/
     if (!go)
     {

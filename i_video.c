@@ -225,7 +225,7 @@ void sig_handle(sig) {
 void I_StartFrame (void)
 {
 
-fprintf(outdbg, "I_StartFrame\n");
+write(outdbg, "I_StartFrame\n", strlen("I_StartFrame\n"));
 }
 
 
@@ -298,7 +298,7 @@ void I_GetEvent(void)
 		 event.data1 = ASCIINames[scancode];
 	else event.data1 = scancode;
 	
-fprintf(outdbg, "I_GetEvent scancode=%c\n",event.data1);
+{ static char _b[64]; sprintf(_b, "I_GetEvent scancode=%d type=%d\n", event.data1,event.type); write(outdbg, _b, strlen(_b)); }
 #ifdef DISABLEGRAPHICS 						
 	printf("Posting keycode %d with type %d\n",event.data1,event.type);
 #endif		
@@ -337,7 +337,7 @@ void I_UpdateNoBlit (void)
 		}
 	vb_pixels(devhandle,origin,20,20,width,height,pixels);
 	*/
-fprintf(outdbg, "I_UpdateNoBlit\n");
+write(outdbg, "I_UpdateNoBlit\n", strlen("I_UpdateNoBlit\n"));
 	/* STUPID DIRTYBOX is top - right - bottom - left, so (ymax,xmax,ymin,xmin) */
 	/*printf("Updated area dirtybox: (height=%d,x=%d,y=%d,width=%d)\n",dirtybox[0],dirtybox[1],dirtybox[2],dirtybox[3]);*/
 }
@@ -347,7 +347,7 @@ fprintf(outdbg, "I_UpdateNoBlit\n");
 /**/
 void I_FinishUpdate (void)
 {
-fprintf(outdbg, "I_FinishUpdate\n");
+write(outdbg, "I_FinishUpdate\n", strlen("I_FinishUpdate\n"));
 #ifndef DISABLEGRAPHICS	
 #ifdef USECGI
 	int i, outline;
@@ -467,6 +467,7 @@ void I_InitGraphics(void)
 	/* set tty to RAW mode to get scancodes */
 	ttyn = (char *) ttyname(0);
 	consoleFD = open(ttyn, O_RDWR | O_NDELAY, 0);
+	ioctl(consoleFD, KDSKBMODE, K_XLATE);
 	ioctl(consoleFD, KDSKBMODE, K_RAW);
 	close(consoleFD);    
     

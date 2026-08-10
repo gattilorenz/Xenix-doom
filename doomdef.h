@@ -32,7 +32,7 @@
 /* DOOM version*/
 enum { VERSION =  110 };
 
-FILE *outdbg;
+int outdbg;
 
 /* Game mode handling - identify IWAD version*/
 /*  to handle IWAD dependend animations etc.*/

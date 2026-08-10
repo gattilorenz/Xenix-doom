@@ -28,6 +28,8 @@ rcsid[] = "$Id: st_stuff.c,v 1.6 1997/02/03 22:45:13 b1 Exp $";
 
 
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "i_system.h"
 #include "i_video.h"
@@ -499,7 +501,7 @@ void ST_Stop(void);
 void ST_refreshBackground(void)
 {
 
-fprintf(outdbg, "ST_refreshBackground\n");
+write(outdbg, "ST_refreshBackground\n", 20);
     if (st_statusbaron)
     {
 	V_DrawPatch(ST_X, 0, BG, sbar);
@@ -521,7 +523,7 @@ ST_Responder (event_t* ev)
   int		i;
     
   /* Filter automap on/off.*/
-fprintf(outdbg, "ST_Responder\n");
+write(outdbg, "ST_Responder\n", 13);
   if (ev->type == ev_keyup
       && ((ev->data1 & 0xffff0000) == AM_MSGHEADER))
   {
@@ -530,10 +532,11 @@ fprintf(outdbg, "ST_Responder\n");
       case AM_MSGENTERED:
 	st_gamestate = AutomapState;
 	st_firsttime = true;
+write(outdbg, "ST_Responder - set st_firsttime to true\n", 41);
 	break;
 	
-      case AM_MSGEXITED:
-	/*	fprintf(stderr, "AM exited\n");*/
+       case AM_MSGEXITED:
+	write(outdbg, "AM exited\n", 8);
 	st_gamestate = FirstPersonState;
 	break;
     }
@@ -734,7 +737,7 @@ int ST_calcPainOffset(void)
     static int	lastcalc;
     static int	oldhealth = -1;
     
-fprintf(outdbg, "ST_calcPainOffset\n");
+write(outdbg, "ST_calcPainOffset\n", 18);
     health = plyr->health > 100 ? 100 : plyr->health;
 
     if (health != oldhealth)
@@ -761,7 +764,7 @@ void ST_updateFaceWidget(void)
     static int	priority = 0;
     boolean	doevilgrin;
 
-fprintf(outdbg, "ST_updateFaceWidget\n");
+write(outdbg, "ST_updateFaceWidget\n", 20);
     if (priority < 10)
     {
 	/* dead*/
@@ -931,7 +934,7 @@ void ST_updateWidgets(void)
     int		i;
 
     /* must redirect the pointer if the ready weapon has changed.*/
-fprintf(outdbg, "ST_updateWidgets\n");
+write(outdbg, "ST_updateWidgets\n", 17);
     /*  if (w_ready.data != plyr->readyweapon)*/
     /*  {*/
     if (weaponinfo[plyr->readyweapon].ammo == am_noammo)
@@ -993,7 +996,7 @@ fprintf(outdbg, "ST_updateWidgets\n");
 void ST_Ticker (void)
 {
 
-fprintf(outdbg, "ST_Ticker\n");
+write(outdbg, "ST_Ticker\n", 10);
     st_clock++;
     st_randomnumber = M_Random();
     ST_updateWidgets();
@@ -1010,7 +1013,7 @@ void ST_doPaletteStuff(void)
     byte*	pal;
     int		cnt;
     int		bzc;
-
+	write(outdbg, "ST_doPaletteStuff\n", 18);
     cnt = plyr->damagecount;
 
     if (plyr->powers[pw_strength])
@@ -1067,7 +1070,7 @@ void ST_drawWidgets(boolean refresh)
     int		i;
 
     /* used by w_arms[] widgets*/
-fprintf(outdbg, "ST_drawWidgets\n");
+write(outdbg, "ST_drawWidgets\n", 16);
     st_armson = st_statusbaron && !deathmatch;
 
     /* used by w_frags widget*/
@@ -1101,7 +1104,7 @@ fprintf(outdbg, "ST_drawWidgets\n");
 void ST_doRefresh(void)
 {
 
-fprintf(outdbg, "ST_doRefresh\n");
+{ static char buf[80]; sprintf(buf, "ST_doRefresh\n"); write(outdbg, buf, strlen(buf)); }
     st_firsttime = false;
 
     /* draw status bar background to off-screen buff*/
@@ -1115,24 +1118,31 @@ fprintf(outdbg, "ST_doRefresh\n");
 void ST_diffDraw(void)
 {
     /* update all widgets*/
-fprintf(outdbg, "ST_diffDraw\n");
+write(outdbg, "ST_diffDraw\n", 12);
     ST_drawWidgets(false);
 }
 
 void ST_Drawer (boolean fullscreen, boolean refresh)
 {
-  
-fprintf(outdbg, "ST_Drawer\n");
+  { static char buf[80]; sprintf(buf, "ST_Drawer fullscreen=%d, refresh=%d\n", fullscreen, refresh); write(outdbg, buf, strlen(buf)); }
     st_statusbaron = (!fullscreen) || automapactive;
     st_firsttime = st_firsttime || refresh;
-
+{ static char buf[80]; sprintf(buf, "ST_Drawer set st_firsttime to %d\n", st_firsttime); write(outdbg, buf, strlen(buf)); }
     /* Do red-/gold-shifts from damage/items*/
     ST_doPaletteStuff();
 
     /* If just after ST_Start(), refresh all*/
-    if (st_firsttime) ST_doRefresh();
+
+    if (st_firsttime) {
+     { static char buf[80]; sprintf(buf, "ST_Drawer st_firsttime=true, background refresh\n"); write(outdbg, buf, strlen(buf)); }
+     ST_doRefresh();
+}
+    else {
+{ static char buf[80]; sprintf(buf, "ST_Drawer st_firsttime=false, no background refresh\n"); write(outdbg, buf, strlen(buf)); }
     /* Otherwise, update as little as possible*/
-    else ST_diffDraw();
+    ST_diffDraw();
+    }
+
 
 }
 
@@ -1144,7 +1154,9 @@ void ST_loadGraphics(void)
     int		facenum;
     
     char	namebuf[9];
-
+    
+	write(outdbg, "ST_loadGraphics\n", 16);
+	
     /* Load the numbers, tall and short*/
     for (i=0;i<10;i++)
     {
@@ -1215,7 +1227,7 @@ void ST_loadGraphics(void)
 
 void ST_loadData(void)
 {
-fprintf(outdbg, "ST_loadData\n");
+	write(outdbg, "ST_loadData\n", 12);
     lu_palette = W_GetNumForName ("PLAYPAL");
     ST_loadGraphics();
 }
@@ -1226,7 +1238,7 @@ void ST_unloadGraphics(void)
     int i;
 
     /* unload the numbers, tall and short*/
-fprintf(outdbg, "ST_unloadGraphics\n");
+write(outdbg, "ST_unloadGraphics\n", 18);
     for (i=0;i<10;i++)
     {
 	Z_ChangeTag(tallnum[i], PU_CACHE);
@@ -1260,7 +1272,7 @@ fprintf(outdbg, "ST_unloadGraphics\n");
 
 void ST_unloadData(void)
 {
-fprintf(outdbg, "ST_unloadData\n");
+write(outdbg, "ST_unloadData\n", 14);
     ST_unloadGraphics();
 }
 
@@ -1269,7 +1281,7 @@ void ST_initData(void)
 
     int		i;
 
-fprintf(outdbg, "ST_initData\n");
+write(outdbg, "ST_initData, set st_firsttime to true\n", 38);
     st_firsttime = true;
     plyr = &players[consoleplayer];
 
@@ -1304,7 +1316,7 @@ void ST_createWidgets(void)
     int i;
 
     /* ready weapon ammo*/
-fprintf(outdbg, "ST_createWidgets\n");
+write(outdbg, "ST_createWidgets\n", 17);
     STlib_initNum(&w_ready,
 		  ST_AMMOX,
 		  ST_AMMOY,
@@ -1464,7 +1476,7 @@ static boolean	st_stopped = true;
 void ST_Start (void)
 {
 
-fprintf(outdbg, "ST_Start\n");
+write(outdbg, "ST_Start\n", 9);
     if (!st_stopped)
 	ST_Stop();
 
@@ -1491,6 +1503,7 @@ fprintf(outdbg, "ST_Stop\n");
 
 void ST_Init (void)
 {
+write(outdbg, "ST_Init\n", 8);
     veryfirsttime = 0;
     ST_loadData();
     screens[4] = (byte *) Z_Malloc(ST_WIDTH*ST_HEIGHT, PU_STATIC, 0);
