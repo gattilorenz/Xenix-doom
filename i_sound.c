@@ -33,7 +33,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <sys/time.h>
 #include <sys/types.h>
 
-#ifndef XENIX
+#ifndef __M_XENIX
 #ifndef LINUX
 #include <sys/filio.h>
 #endif
@@ -166,7 +166,7 @@ myioctl
   int	command,
   int*	arg )
 {   
-   #ifndef XENIX
+   #ifndef __M_XENIX
  int		rc;
     extern int	errno;
     
@@ -194,7 +194,7 @@ getsfx
   int*          len )
 {
 
-	#ifndef XENIX
+	#ifndef __M_XENIX
     unsigned char*      sfx;
     unsigned char*      paddedsfx;
     int                 i;
@@ -279,7 +279,7 @@ addsfx
   int		step,
   int		seperation )
 {
-	#ifndef XENIX
+	#ifndef __M_XENIX
     static unsigned short	handlenums = 0;
  
     int		i;
@@ -410,7 +410,7 @@ addsfx
 /**/
 void I_SetChannels()
 {
-  #ifndef XENIX
+  #ifndef __M_XENIX
   /* Init internal lookups (raw data, mixing buffer, channels).*/
   /* This function sets up internal lookups used during*/
   /*  the mixing process. */
@@ -467,7 +467,7 @@ void I_SetMusicVolume(int volume)
 /**/
 int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
-    #ifndef XENIX
+    #ifndef __M_XENIX
     char namebuf[9];
     sprintf(namebuf, "ds%s", sfx->name);
     return W_GetNumForName(namebuf);
@@ -497,7 +497,7 @@ I_StartSound
   int		priority )
 {
 
-#ifndef XENIX
+#ifndef __M_XENIX
 
   /* UNUSED*/
   priority = 0;
@@ -565,7 +565,7 @@ int I_SoundIsPlaying(int handle)
 /**/
 void I_UpdateSound( void )
 {
-#ifndef XENIX
+#ifndef __M_XENIX
 #ifdef SNDINTR
   /* Debug. Count buffer misses with interrupt.*/
   static int misses = 0;
@@ -697,7 +697,7 @@ void
 I_SubmitSound(void)
 {
   /* Write it to DSP device.*/
-#ifndef XENIX
+#ifndef __M_XENIX
   write(audio_fd, mixbuffer, SAMPLECOUNT*BUFMUL);
 #endif
 }
@@ -725,7 +725,7 @@ I_UpdateSoundParams
 
 void I_ShutdownSound(void)
 {    
-#ifndef XENIX
+#ifndef __M_XENIX
 #ifdef SNDSERV
   if (sndserver)
   {
@@ -772,7 +772,7 @@ void I_ShutdownSound(void)
 void
 I_InitSound()
 { 
-#ifndef XENIX
+#ifndef __M_XENIX
 #ifdef SNDSERV
   char buffer[256];
   
@@ -946,7 +946,7 @@ int I_QrySongPlaying(int handle)
 /*  time independend timer happens to get lost due to heavy load.*/
 /* SIGALRM and ITIMER_REAL doesn't really work well.*/
 /* There are issues with profiling as well.*/
-#ifndef XENIX
+#ifndef __M_XENIX
 static int /*__itimer_which*/  itimer = ITIMER_REAL;
 #endif
 static int sig = SIGALRM;
@@ -954,7 +954,7 @@ static int sig = SIGALRM;
 /* Interrupt handler.*/
 void I_HandleSoundTimer( int ignore )
 {
-#ifndef XENIX
+#ifndef __M_XENIX
   /* Debug.*/
   /*fprintf( stderr, "%c", '+' ); fflush( stderr );*/
   
@@ -980,7 +980,7 @@ void I_HandleSoundTimer( int ignore )
 /* Get the interrupt. Set duration in millisecs.*/
 int I_SoundSetTimer( int duration_of_tick )
 {
-#ifndef XENIX
+#ifndef __M_XENIX
   /* Needed for gametick clockwork.*/
   struct itimerval    value;
   struct itimerval    ovalue;
@@ -1023,7 +1023,7 @@ return 0;
 /* Remove the interrupt. Set duration to zero.*/
 void I_SoundDelTimer()
 {
-#ifndef XENIX
+#ifndef __M_XENIX
   /* Debug.*/
   if ( I_SoundSetTimer( 0 ) == -1)
     fprintf( stderr, "I_SoundDelTimer: failed to remove interrupt. Doh!\n");
