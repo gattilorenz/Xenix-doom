@@ -15,12 +15,15 @@ LIBS=-lccgi -ltermlib -ltcap -lcurses -levent
 O=xenix
 
 # not too sophisticated dependency
+#
+# i_sound.c is deliberately NOT in this shared list: it needs to be
+# compiled twice, once for each of the two binaries below (xnxdoom
+# with sound, doom-mute without) -- see the targets themselves.
 OBJS=				\
 		$(O)/doomdef.o		\
 		$(O)/doomstat.o		\
 		$(O)/dstrings.o		\
 		$(O)/i_system.o		\
-		$(O)/i_sound.o		\
 		$(O)/i_video.o		\
 		$(O)/i_net.o			\
 		$(O)/tables.o			\
@@ -80,15 +83,44 @@ OBJS=				\
 		$(O)/sounds.o
 
 
-all:	 $(O)/xnxdoom
+# sndserver is a separate standalone executable (see sndserver.c), spawned
+# via popen() by I_InitSound() at runtime -- it is not linked into xnxdoom
+# itself. It shares sounds.o with the main game so both processes agree on
+# sound effect numbering.
+SNDSERVER_OBJS=			\
+		$(O)/sndserver.o	\
+		$(O)/sounds.o
+
+all:	 $(O)/xnxdoom $(O)/doom-mute $(O)/sndserver
 		 ln /proj/doom1.wad $(O)/doom1.wad
 clean:
 	rm -f *.o *~ *.flc
 	rm -f xenix/*
 
-$(O)/xnxdoom:	$(OBJS) $(O)/i_main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_main.o \
+# Sound-enabled build (the normal one). I_InitSound() spawns
+# sndserver and talks to it over a pipe -- see sndserver.c and
+# sb_proto.h.
+$(O)/xnxdoom:	$(OBJS) $(O)/i_sound.o $(O)/i_main.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_sound.o $(O)/i_main.o \
 	-o $(O)/xnxdoom $(LIBS)
+
+# Sound-disabled build: same source tree, i_sound.c compiled with
+# -DNOSOUND so I_InitSound() never spawns sndserver (everything
+# else in i_sound.c already no-ops on its own once sndserver stays
+# NULL). Deliberately its own object (i_sound_nosound.o, not
+# i_sound.o) and its own binary, not a flag on the shared xnxdoom
+# target -- switching which variant you build should never risk
+# silently linking a stale object compiled the other way.
+$(O)/doom-mute:	$(OBJS) $(O)/i_sound_nosound.o $(O)/i_main.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_sound_nosound.o $(O)/i_main.o \
+	-o $(O)/doom-mute $(LIBS)
+
+$(O)/i_sound_nosound.o:	i_sound.c
+	$(CC) $(CFLAGS) -DNOSOUND -c i_sound.c -o $(O)/i_sound_nosound.o
+
+$(O)/sndserver:	$(SNDSERVER_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(SNDSERVER_OBJS) \
+	-o $(O)/sndserver -lm
 
 $(O)/%.o:	%.c
 	$(CC) $(CFLAGS) -c $< -o $@

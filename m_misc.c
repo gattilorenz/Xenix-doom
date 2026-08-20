@@ -254,7 +254,7 @@ default_t	defaults[] =
 
 /* UNIX hack, to be removed. */
 #ifdef SNDSERV
-    {"sndserver", (int *) &sndserver_filename, (int) "sndserver"},
+    {"sndserver", (int *) &sndserver_filename, (int) "./sndserver"},
     {"mb_used", &mb_used, 2},
 #endif
     

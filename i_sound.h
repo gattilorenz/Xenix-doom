@@ -25,12 +25,12 @@
 
 #include "doomdef.h"
 
-/* UNIX hack, to be removed.*/
-#ifdef SNDSERV
 #include <stdio.h>
+
+/* The sound server process and the pipe used to talk to it -- see*/
+/*  sndserver.c and sb_proto.h.*/
 extern FILE* sndserver;
 extern char* sndserver_filename;
-#endif
 
 #include "doomstat.h"
 #include "sounds.h"

@@ -40,6 +40,7 @@ int XShmGetEventBase( Display* dpy ); /* problems with g++?*/
 
 #include "doomstat.h"
 #include "i_system.h"
+#include "i_sound.h"
 #include "v_video.h"
 #include "m_argv.h"
 #include "d_main.h"
@@ -192,6 +193,11 @@ void I_ShutdownGraphics(void)
 
 
 void sig_handle(sig) {
+	/* Without this, a raw signal (e.g. SIGINT from the DEL key)*/
+	/*  leaves sndserver to die uncaught, mid-DMA if it's unlucky,*/
+	/*  instead of getting a clean 'q'/flush/close -- see the port*/
+	/*  notes on why that matters.*/
+	I_ShutdownSound();
 	I_ShutdownGraphics();
 	switch (sig) {
 		case SIGHUP: printf("Caught SIGHUP: hangup\n"); break;
