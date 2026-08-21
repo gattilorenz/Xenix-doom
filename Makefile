@@ -6,7 +6,7 @@
 #
 CC=  gcc  # gcc or g++
 
-CFLAGS=-g -w -DNORMALUNIX #-DUSECGI #-DDISABLEGRAPHICS
+CFLAGS=-g -w -DNORMALUNIX
 LDFLAGS=-L/usr/lib/386
 LIBS=-lccgi -ltermlib -ltcap -lcurses -levent
 
@@ -16,15 +16,12 @@ O=xenix
 
 # not too sophisticated dependency
 #
-# i_sound.c is deliberately NOT in this shared list: it needs to be
-# compiled twice, once for each of the two binaries below (xnxdoom
-# without sound, xnxdoom-snd with) -- see the targets themselves.
+# i_sound.c and i_video.c are compiled separately per target, below.
 OBJS=				\
 		$(O)/doomdef.o		\
 		$(O)/doomstat.o		\
 		$(O)/dstrings.o		\
 		$(O)/i_system.o		\
-		$(O)/i_video.o		\
 		$(O)/i_net.o			\
 		$(O)/tables.o			\
 		$(O)/f_finale.o		\
@@ -83,44 +80,60 @@ OBJS=				\
 		$(O)/sounds.o
 
 
-# sndserver and musserver are separate standalone executables (see
-# sndserver.c/musserver.c), each spawned via popen() by I_InitSound() at
-# runtime -- neither is linked into xnxdoom itself. sndserver shares
-# sounds.o with the main game so both processes agree on sound effect
-# numbering; musserver needs no shared objects, since it identifies music
-# by name over the wire rather than by an index into a shared table.
+# sndserver/musserver are standalone executables spawned by
+# I_InitSound() at runtime, not linked into xnxdoom.
 SNDSERVER_OBJS=			\
 		$(O)/sndserver.o	\
 		$(O)/sounds.o
 
-all:	 $(O)/xnxdoom $(O)/xnxdoom-snd $(O)/sndserver $(O)/musserver
-		 ln /proj/doom1.wad $(O)/doom1.wad
+.PHONY:	help vga cgi vgasound cgisound clean
+
+help:
+	@echo "Usage: gmake <target>"
+	@echo ""
+	@echo "  vga       -- direct VGA graphics, no sound"
+	@echo "  cgi       -- CGI graphics library, no sound"
+	@echo "  vgasound  -- direct VGA graphics, with sound"
+	@echo "  cgisound  -- CGI graphics library, with sound"
+	@echo "  clean     -- remove all built objects and binaries"
+	@echo ""
+	@echo "Every target produces xenix/xnxdoom -- pick one variant at a"
+	@echo "time, since each overwrites the same binary name. vgasound"
+	@echo "and cgisound also build xenix/sndserver and xenix/musserver."
+	@echo "See the README for what each variant needs at compile/run time."
+
+# .PHONY so switching targets always relinks xnxdoom, since they all
+# share that one output name.
+
+vga:	$(OBJS) $(O)/i_video.o $(O)/i_sound.o $(O)/i_main.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_video.o $(O)/i_sound.o $(O)/i_main.o \
+	-o $(O)/xnxdoom $(LIBS)
+	-ln /proj/doom1.wad $(O)/doom1.wad
+
+cgi:	$(OBJS) $(O)/i_video_cgi.o $(O)/i_sound.o $(O)/i_main.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_video_cgi.o $(O)/i_sound.o $(O)/i_main.o \
+	-o $(O)/xnxdoom $(LIBS)
+	-ln /proj/doom1.wad $(O)/doom1.wad
+
+vgasound:	$(OBJS) $(O)/i_video.o $(O)/i_sound_snd.o $(O)/i_main.o $(O)/sndserver $(O)/musserver
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_video.o $(O)/i_sound_snd.o $(O)/i_main.o \
+	-o $(O)/xnxdoom $(LIBS)
+	-ln /proj/doom1.wad $(O)/doom1.wad
+
+cgisound:	$(OBJS) $(O)/i_video_cgi.o $(O)/i_sound_snd.o $(O)/i_main.o $(O)/sndserver $(O)/musserver
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_video_cgi.o $(O)/i_sound_snd.o $(O)/i_main.o \
+	-o $(O)/xnxdoom $(LIBS)
+	-ln /proj/doom1.wad $(O)/doom1.wad
+
 clean:
 	rm -f *.o *~ *.flc
 	rm -f xenix/*
 
-# Sound-disabled build (the default). i_sound.c is compiled plain, with
-# no defines -- I_InitSound() never spawns sndserver/musserver
-# (everything else in i_sound.c already no-ops on its own once they
-# stay NULL). This uses the ordinary $(O)/%.o pattern rule below, same
-# as every other source file, since no extra flag is needed.
-$(O)/xnxdoom:	$(OBJS) $(O)/i_sound.o $(O)/i_main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_sound.o $(O)/i_main.o \
-	-o $(O)/xnxdoom $(LIBS)
-
-# Sound-enabled build: same source tree, i_sound.c compiled with
-# -DWITHSOUND so I_InitSound() spawns sndserver and musserver and
-# talks to them over a pipe -- see sndserver.c, musserver.c and
-# sb_proto.h. Deliberately its own object (i_sound_snd.o, not
-# i_sound.o) and its own binary, not a flag on the shared xnxdoom
-# target -- switching which variant you build should never risk
-# silently linking a stale object compiled the other way.
-$(O)/xnxdoom-snd:	$(OBJS) $(O)/i_sound_snd.o $(O)/i_main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_sound_snd.o $(O)/i_main.o \
-	-o $(O)/xnxdoom-snd $(LIBS)
-
 $(O)/i_sound_snd.o:	i_sound.c
 	$(CC) $(CFLAGS) -DWITHSOUND -c i_sound.c -o $(O)/i_sound_snd.o
+
+$(O)/i_video_cgi.o:	i_video.c
+	$(CC) $(CFLAGS) -DUSECGI -c i_video.c -o $(O)/i_video_cgi.o
 
 $(O)/sndserver:	$(SNDSERVER_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(SNDSERVER_OBJS) \

@@ -5,19 +5,18 @@ A port of Doom for Xenix 386 (no sound or network support).
 
 I tested it under Xenix 2.3.4; on my Pentium 166Mhz it runs at full speed.
 
-To compile it, you need to install the original Development System and gcc 2.5.8 (and the CGI graphics library if you want to compile with USECGI, read below).
+To compile it, you need to install the original Development System, gcc 2.5.8 (and the CGI graphics library if you want to build the cgi/cgisound variants, read below) and gmake.
 
 Make sure to initialize the mouse (with mkdev mouse, I chose the "keyboard mouse" and activated it on tty1a). Mouse support is not actually implemented, but mkdev mouse is required to use SCO's event manager for reading keyboard events (see chapter 10 of http://www.bitsavers.org/pdf/sco/system_V_2.x/Development_System/XG-10-10-88-5.0_2.3_XENIX_System_V_C_Language_Guide_Oct88.pdf).
 
-### Video libraries
-i_video.c uses direct VGA access by default. 
-The CGI graphics library can still be used by compiling with -DUSECGI, but it is **s l o w**. On a real machine, you probably need a 1Ghz+ CPU to have a playable game. Doom's I_SetPalette call in particular is a bottleneck because each color is set individually, due to a bug in CGI's vsc_table function. On the other hand, the CGI version theoretically runs on EGA cards as well, using a customized palette taken from https://www.doomworld.com/idgames/graphics/ega_pal.
+### Build
+Run `gmake` for the list of targets: `vga` and `cgi` pick the graphics backend, `vgasound`/`cgisound` add sound. All four produce `xenix/xnxdoom`, so build only one variant at a time.
 
-To run the CGI version, make sure to set the CGIDISP (vga256 or ega) and CGIPATH (/usr/lib/cgi) environment variables.
+VGA is the default and fastest choice. CGI is needed for EGA cards but is **s l o w** -- on a real machine you probably need a 1Ghz+ CPU, since Doom's I_SetPalette call is a particular bottleneck due to a bug in CGI's vsc_table function. It theoretically runs on EGA cards as well, using a customized palette taken from https://www.doomworld.com/idgames/graphics/ega_pal. Set the CGIDISP (vga256 or ega) and CGIPATH (/usr/lib/cgi) environment variables at runtime for the cgi/cgisound builds.
 
-### Audio
-You can compile the -DWITHSOUND flag to enable sound using the [SoundBlaster driver for Xenix](https://github.com/gattilorenz/xenix-sb-driver). For timing/CPU related reason and code simplicity, the music is sent via MIDI port to an external synthesizer. If you're on 86Box, I recommend using FluydSynth with a Roland SC-55 soundfont (e.g. [this one] (https://github.com/nitro-shoe/sc-55-soundfont/releases/)).
-Note that driver and sound code are mostly written by Claude. 
+The sound variants need the [SoundBlaster driver for Xenix](https://github.com/gattilorenz/xenix-sb-driver) and also build the sndserver/musserver companion processes. Music is sent via MIDI to an external synthesizer for timing/CPU/simplicity reasons -- if you're on 86Box, I recommend FluidSynth with a Roland SC-55 soundfont (e.g. [this one](https://github.com/nitro-shoe/sc-55-soundfont/releases/)).
+
+Note that the driver and sound code are mostly written by Claude.
 
 ### TODO: 
 - ~~add sound~~
