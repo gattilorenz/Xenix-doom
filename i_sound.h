@@ -25,12 +25,14 @@
 
 #include "doomdef.h"
 
-/* UNIX hack, to be removed.*/
-#ifdef SNDSERV
 #include <stdio.h>
+
+/* The sound-effects and music server processes, and the pipes used to*/
+/*  talk to them -- see sndserver.c, musserver.c and sb_proto.h.*/
 extern FILE* sndserver;
 extern char* sndserver_filename;
-#endif
+extern FILE* musserver;
+extern char* musserver_filename;
 
 #include "doomstat.h"
 #include "sounds.h"
@@ -97,8 +99,11 @@ void I_SetMusicVolume(int volume);
 /* PAUSE game handling.*/
 void I_PauseSong(int handle);
 void I_ResumeSong(int handle);
-/* Registers a song handle to song data.*/
-int I_RegisterSong(void *data);
+/* Registers a song by its short name (musicinfo_t.name, e.g. "e1m1")*/
+/*  -- not the generic "void *data" the original id API declared, since*/
+/*  musserver loads the lump itself, straight from the WAD, the same*/
+/*  way sndserver already does for sound effects.*/
+int I_RegisterSong(char *name);
 /* Called by anything that wishes to start music.*/
 /*  plays a song, and when the song is done,*/
 /*  starts playing it again in an endless loop.*/
