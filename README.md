@@ -15,9 +15,12 @@ The CGI graphics library can still be used by compiling with -DUSECGI, but it is
 
 To run the CGI version, make sure to set the CGIDISP (vga256 or ega) and CGIPATH (/usr/lib/cgi) environment variables.
 
+### Audio
+You can compile the -DWITHSOUND flag to enable sound using the [SoundBlaster driver for Xenix](https://github.com/gattilorenz/xenix-sb-driver). For timing/CPU related reason and code simplicity, the music is sent via MIDI port to an external synthesizer. If you're on 86Box, I recommend using FluydSynth with a Roland SC-55 soundfont (e.g. [this one] (https://github.com/nitro-shoe/sc-55-soundfont/releases/)).
+Note that driver and sound code are mostly written by Claude. 
 
 ### TODO: 
-- add sound
+- ~~add sound~~
 - ~~The status bar/HUD background is black until automap is entered the first time (?)~~
 - ~~Use a loop in I_GetEvent to consume all events in the queue?~~
 - ~~Use direct VGA access, expecially to change the palette in one go (see https://www.tuhs.org/Usenet/comp.unix.xenix.sco/1991-February/000624.html, http://uw714doc.sco.com/en/man/html.7/display.7.html / http://www.polarhome.com/service/man/?qf=screen&tf=2&of=Xenix&sf=HW, http://web.mit.edu/ghostscript/src/ghostscript-8.14/src/gdevsco.c)~~

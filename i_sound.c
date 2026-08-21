@@ -19,13 +19,19 @@
 /* DESCRIPTION:*/
 /*	System interface for sound.*/
 /**/
-/*	This is the client side of the sndserver architecture (see*/
-/*	sndserver.c and sb_proto.h): all of this file does is spawn*/
-/*	the sndserver process and write play/quit commands to its*/
-/*	pipe. No sample data or mixing happens here -- see the port*/
-/*	plan for why (in short: /dev/sbdsp has no non-blocking write*/
-/*	mode, so the game process cannot own it directly without*/
-/*	risking a stall on every buffer boundary).*/
+/*	This is the client side of the sndserver/musserver architecture*/
+/*	(see sndserver.c, musserver.c and sb_proto.h): all of this file*/
+/*	does is spawn those two processes and write commands to their*/
+/*	pipes. No sample data, mixing, or MUS parsing happens here --*/
+/*	see the port plan for why sound effects and music each need*/
+/*	their own separate process rather than living in the game's own*/
+/*	process (in short: neither /dev/sbdsp nor /dev/sbmidi has a*/
+/*	non-blocking write mode, so the game process cannot own either*/
+/*	directly without risking a stall -- and sound effects and music*/
+/*	cannot share ONE process either, since a single write() to*/
+/*	/dev/sbmidi blocks for the real-time duration of however much*/
+/*	music it just wrote, which would starve sound-effect mixing for*/
+/*	as long as music is playing).*/
 /**/
 /*-----------------------------------------------------------------------------*/
 
@@ -36,6 +42,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "i_sound.h"
 #include "d_main.h"
@@ -45,9 +52,12 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include "doomdef.h"
 #include "doomstat.h"
 
-/* Separate sound server process, talked to over a pipe.*/
+/* Separate sound-effects and music server processes, each talked to*/
+/*  over its own pipe.*/
 FILE*	sndserver = 0;
 char*	sndserver_filename = "./sndserver";
+FILE*	musserver = 0;
+char*	musserver_filename = "./musserver";
 
 
 /**/
@@ -90,6 +100,20 @@ I_StartSound
 {
   /* UNUSED.*/
   priority = 0;
+
+  /* s_sound.c keeps volume on DOOM's native 0-15 scale (snd_SfxVolume's*/
+  /*  own range, see m_menu.c's slider) -- see also its own commented-*/
+  /*  out "*8" next to S_SetSfxVolume(), the original id source's own*/
+  /*  reminder that this scaling has to happen somewhere. sndserver's*/
+  /*  mixer indexes vol_lookup[vol*256+sample] with vol expected in*/
+  /*  0-127 (see sndserver.c); left unscaled, every sound played at*/
+  /*  roughly 1/8th of the intended level -- quiet enough on real*/
+  /*  hardware to pass as silence. Scale here, at the wire-protocol*/
+  /*  boundary, so s_sound.c's own 0-15 comparisons against*/
+  /*  snd_SfxVolume elsewhere stay correct.*/
+  vol *= 8;
+  if (vol > 127)
+    vol = 127;
 
   if (sndserver)
   {
@@ -157,101 +181,159 @@ void I_ShutdownSound(void)
 }
 
 
+#ifdef WITHSOUND
+/* Shared by I_InitSound() below to spawn either server process the*/
+/*  same way: "<filename> <wadpath> -quiet" over a popen() pipe.*/
+/**/
+/* logname's stdout/stderr are redirected to a log file rather than*/
+/*  left inherited from this process. I_InitGraphics() (see*/
+/*  i_video.c) later switches the console into raw VGA mode 13h via*/
+/*  ioctl(0, SW_VGA13, 0) -- any stray text either server writes to*/
+/*  that console afterwards (e.g. an mus_load() error mid-game) would*/
+/*  land on a linear-framebuffer-mapped device expecting pixel data,*/
+/*  not characters, which is a known way to wedge real/emulated PC*/
+/*  VGA hardware. Truncated (">"), not appended, so each run's log*/
+/*  reflects only that run.*/
+static FILE*
+spawn_server
+( char*		what,
+  char*		filename,
+  char*		wadpath,
+  char*		logname )
+{
+  char	buffer[1024];
+  FILE*	f;
+
+  sprintf(buffer, "%s %s -quiet >%s 2>&1", filename, wadpath, logname);
+
+  if ( access(filename, X_OK) )
+  {
+    fprintf(stderr, "I_InitSound: could not find %s [%s]\n", what, filename);
+    return 0;
+  }
+
+  f = popen(buffer, "w");
+  if (!f)
+    fprintf(stderr, "I_InitSound: could not start %s [%s]\n", what, buffer);
+  return f;
+}
+#endif
+
+
 void
 I_InitSound()
 {
-#ifdef NOSOUND
-  /* Sound support left out of this build entirely -- see the*/
-  /*  Makefile's xnxdoom-nosound target. sndserver stays NULL, so*/
-  /*  I_StartSound()/I_ShutdownSound() above already no-op on their*/
-  /*  own "if (sndserver)" checks; nothing else to gate.*/
+#ifndef WITHSOUND
+  /* Sound support left out of this build by default -- see the*/
+  /*  Makefile's xnxdoom target (xnxdoom-snd is the sound-enabled*/
+  /*  one). sndserver/musserver stay NULL, so everything above*/
+  /*  already no-ops on its own "if (sndserver)"/"if (musserver)"*/
+  /*  checks; nothing else to gate.*/
   fprintf(stderr, "I_InitSound: built without sound support\n");
 #else
-  char buffer[1024];
-
   /* wadfiles[0] is the primary IWAD path, set up by IdentifyVersion()*/
   /*  and already opened by W_InitMultipleFiles() by the time I_Init()*/
-  /*  (and hence I_InitSound()) runs -- see D_DoomMain(). sndserver*/
-  /*  reads sound effect data straight out of that same file.*/
+  /*  (and hence I_InitSound()) runs -- see D_DoomMain(). Both servers*/
+  /*  read their data straight out of that same file.*/
   if (!wadfiles[0])
   {
-    fprintf(stderr, "I_InitSound: no WAD file, not starting sndserver\n");
+    fprintf(stderr, "I_InitSound: no WAD file, not starting sound servers\n");
     return;
   }
 
-  sprintf(buffer, "%s %s -quiet", sndserver_filename, wadfiles[0]);
+  /* If either server's popen()'d shell can't actually start it (bad*/
+  /*  path in the saved config, missing binary, etc.), the pipe ends*/
+  /*  up with no reader. The very next write to it would otherwise*/
+  /*  raise SIGPIPE, whose default disposition kills this whole*/
+  /*  process outright -- mid-VGA-mode, with the keyboard driver in*/
+  /*  raw scancode mode, which is as ugly a crash as it sounds. Losing*/
+  /*  sound entirely is fine; losing the whole game over it is not.*/
+  signal(SIGPIPE, SIG_IGN);
 
-  if ( !access(sndserver_filename, X_OK) )
-  {
-    sndserver = popen(buffer, "w");
-    if (!sndserver)
-      fprintf(stderr, "I_InitSound: could not start sound server [%s]\n", buffer);
-  }
-  else
-    fprintf(stderr, "I_InitSound: could not find sound server [%s]\n",
-	    sndserver_filename);
+  sndserver = spawn_server("sound server", sndserver_filename, wadfiles[0], "sndserver.log");
+  musserver = spawn_server("music server", musserver_filename, wadfiles[0], "musserver.log");
 #endif
 }
 
 
 /**/
 /* MUSIC API.*/
-/* Still no music done.*/
-/* Remains. Dummies.*/
+/* Starting a song means sending a 'play' command to musserver, same*/
+/*  shape as I_StartSound() above. musserver loops the song on its*/
+/*  own (per the looping flag) until told to stop or play something*/
+/*  else -- see musserver.c.*/
 /**/
 void I_InitMusic(void)		{ }
-void I_ShutdownMusic(void)	{ }
-void I_SetMusicVolume(int volume) { volume = 0; }
 
-static int	looping=0;
-static int	musicdies=-1;
-
-void I_PlaySong(int handle, int looping)
+void I_ShutdownMusic(void)
 {
-  /* UNUSED.*/
-  handle = looping = 0;
-  musicdies = gametic + TICRATE*30;
+  if (musserver)
+  {
+    fprintf(musserver, SB_PROTO_QUIT_FMT);
+    fflush(musserver);
+    pclose(musserver);
+    musserver = 0;
+  }
 }
 
+void I_SetMusicVolume(int volume) { volume = 0; }
+
+/* UNUSED. musserver has no pause/resume in its wire protocol -- true*/
+/*  mid-song pause was never implemented even in id's own reference*/
+/*  (I_PauseSong/I_ResumeSong were dummies there too), so this is a*/
+/*  pre-existing gap, not a new one.*/
 void I_PauseSong (int handle)
 {
-  /* UNUSED.*/
   handle = 0;
 }
 
 void I_ResumeSong (int handle)
 {
-  /* UNUSED.*/
   handle = 0;
+}
+
+/* Remembers the song name between I_RegisterSong() and I_PlaySong(),*/
+/*  the same way I_StartSound() needs no state of its own between*/
+/*  calls -- these two are always called back-to-back from*/
+/*  S_ChangeMusic(), so one slot is enough.*/
+static char	registered_name[32] = "";
+
+int I_RegisterSong(char* name)
+{
+  strncpy(registered_name, name, sizeof(registered_name)-1);
+  registered_name[sizeof(registered_name)-1] = 0;
+
+  /* Not a real handle -- matches I_StartSound()'s own convention.*/
+  return 1;
+}
+
+void
+I_PlaySong
+( int		handle,
+  int		looping )
+{
+  handle = 0;
+
+  if (musserver)
+  {
+    fprintf(musserver, SB_PROTO_MUSPLAY_FMT, looping ? 1 : 0, registered_name);
+    fflush(musserver);
+  }
 }
 
 void I_StopSong(int handle)
 {
-  /* UNUSED.*/
   handle = 0;
 
-  looping = 0;
-  musicdies = 0;
+  if (musserver)
+  {
+    fprintf(musserver, SB_PROTO_MUSSTOP_FMT);
+    fflush(musserver);
+  }
 }
 
 void I_UnRegisterSong(int handle)
 {
-  /* UNUSED.*/
   handle = 0;
-}
-
-int I_RegisterSong(void* data)
-{
-  /* UNUSED.*/
-  data = NULL;
-
-  return 1;
-}
-
-/* Is the song playing?*/
-int I_QrySongPlaying(int handle)
-{
-  /* UNUSED.*/
-  handle = 0;
-  return looping || musicdies > gametic;
+  registered_name[0] = 0;
 }

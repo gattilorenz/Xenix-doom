@@ -651,18 +651,19 @@ S_ChangeMusic
     /* shutdown old music*/
     S_StopMusic();
 
-    /* get lumpnum if neccessary*/
+    /* get lumpnum if neccessary. musserver loads the actual music*/
+    /*  data itself, straight from the WAD (see i_sound.c/*/
+    /*  musserver.c), so this lookup is kept only so a missing music*/
+    /*  lump is caught here with a clear error instead of failing*/
+    /*  silently inside musserver later.*/
     if (!music->lumpnum)
     {
 	sprintf(namebuf, "d_%s", music->name);
 	music->lumpnum = W_GetNumForName(namebuf);
     }
 
-    /* load & register it*/
-    music->data = (void *) W_CacheLumpNum(music->lumpnum, PU_MUSIC);
-    music->handle = I_RegisterSong(music->data);
-
-    /* play it*/
+    /* register & play it*/
+    music->handle = I_RegisterSong(music->name);
     I_PlaySong(music->handle, looping);
 
     mus_playing = music;
@@ -678,9 +679,7 @@ void S_StopMusic(void)
 
 	I_StopSong(mus_playing->handle);
 	I_UnRegisterSong(mus_playing->handle);
-	Z_ChangeTag(mus_playing->data, PU_CACHE);
-	
-	mus_playing->data = 0;
+
 	mus_playing = 0;
     }
 }
