@@ -276,6 +276,7 @@ static unsigned char	outbuf[OUTPKTS * 4];
 static int		outused = 0;
 static long		last_ms = 0L;
 static int		midi_fd = -1;
+static int		flushed_pending = 0;	/* set by flushout() on a real write*/
 
 
 static int
@@ -294,6 +295,7 @@ flushout( void )
 	return 0;
     }
     outused = 0;
+    flushed_pending = 1;
     return 1;
 }
 
@@ -518,7 +520,13 @@ mus_doevent
 
 
 /* Sweeps every channel silent. Used on stop, on song change, and*/
-/*  before exiting.*/
+/*  before exiting. CC123 (All Notes Off) only -- CC120 (All Sound*/
+/*  Off) used to also be sent here, but that controller is defined to*/
+/*  cut sound immediately, bypassing the instrument's own release*/
+/*  envelope, and on the external GM synth this sounds like a hard*/
+/*  pop/thump across every channel at once rather than a clean stop.*/
+/*  CC123 alone still stops anything from sustaining, it just lets*/
+/*  each note release normally instead of cutting it off mid-envelope.*/
 static void
 mus_allnotesoff( void )
 {
@@ -529,7 +537,6 @@ mus_allnotesoff( void )
     {
 	m[0] = 0xb0 | ch;
 	m[1] = 123; m[2] = 0; emitmsg(m, 3, last_ms);
-	m[1] = 120; m[2] = 0; emitmsg(m, 3, last_ms);
     }
     flushout();
 }
@@ -674,14 +681,13 @@ play_song
     long	delta;
     long	total;
     int		last;
-    int		since_check;
 
     mus_p = mus_score;
     mus_end = mus_score + mus_scorelen;
     mus_done = 0;
     abs_ms = 0L;
     ms_acc = 0L;
-    since_check = 0;
+    flushed_pending = 0;
 
     while (!quitflag && !stopflag && !haveflag)
     {
@@ -707,9 +713,15 @@ play_song
 	    mus_done = 0;
 	}
 
-	if (++since_check >= OUTPKTS)
+	/* Check right after every real write(), not on a separate*/
+	/*  event-count schedule -- most MUS events emit 2-3 MIDI bytes,*/
+	/*  so outused (bytes) used to hit the OUTPKTS flush threshold*/
+	/*  well before a plain per-event counter did, letting several*/
+	/*  blocking writes for the OLD song go out after a stop/switch*/
+	/*  command had already arrived, before it was ever noticed.*/
+	if (flushed_pending)
 	{
-	    since_check = 0;
+	    flushed_pending = 0;
 	    drain_commands_nonblock();
 	}
     }
