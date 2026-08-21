@@ -687,6 +687,21 @@ play_song
     mus_done = 0;
     abs_ms = 0L;
     ms_acc = 0L;
+
+    /* last_ms is a persistent clock emit() uses to compute each*/
+    /*  event's delay (delta = at_ms - last_ms); it is NOT reset on a*/
+    /*  loop-within-a-song (see the mus_done/looping block below --*/
+    /*  that's deliberate, so a looping song's deltas keep scheduling*/
+    /*  forward in real time). But on an actual song SWITCH, abs_ms*/
+    /*  above just reset to 0 for this new song's own timeline while*/
+    /*  last_ms was left holding wherever the OLD song's clock had*/
+    /*  climbed to. Every event's delta then computes negative, gets*/
+    /*  clamped to 0, and this song's entire output floods out with no*/
+    /*  pacing at all until its own abs_ms happens to climb back past*/
+    /*  the old value -- audible as a burst/flood of notes, not just a*/
+    /*  lingering one. Reset here so the new song's clock actually*/
+    /*  starts at 0 alongside abs_ms.*/
+    last_ms = 0L;
     flushed_pending = 0;
 
     while (!quitflag && !stopflag && !haveflag)
