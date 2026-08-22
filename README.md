@@ -19,6 +19,7 @@ The sound variants need the [SoundBlaster driver for Xenix](https://github.com/g
 Note that the driver and sound code are mostly written by Claude.
 
 ### TODO: 
+- fix the CGI implementation; add cgifctns.h, see if slowness can be addressed
 - ~~add sound~~
 - ~~The status bar/HUD background is black until automap is entered the first time (?)~~
 - ~~Use a loop in I_GetEvent to consume all events in the queue?~~
