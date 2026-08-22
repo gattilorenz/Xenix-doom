@@ -1,5 +1,5 @@
 ## Xenix-doom
-A port of Doom for Xenix 386 (no sound or network support).
+A port of Doom for Xenix 386 (now with sound support!).
 
 ![A short video of Doom running on Xenix](Doom_on_Xenix.gif)
 
